@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <SDL/SDL.h>
+#include "vec.h"
 
 //#pragma comment(lib, "SDL.lib")
 //#pragma comment(lib, "SDLmain.lib")
@@ -9,59 +10,6 @@
 #define B_BOTTOM 400
 #define B_LEFT 100
 #define B_RIGHT 500
-
-
-struct Vec2i
-{
-    int x;
-    int y;
-    Vec2i& operator=(const Vec2i& rhs){x = rhs.x; y = rhs.y; return *this;};
-    Vec2i& operator+=(const Vec2i& rhs){x += rhs.x; y += rhs.y; return *this;};
-    Vec2i& operator-=(const Vec2i& rhs){x -= rhs.x; y -= rhs.y; return *this;};
-};
-struct Vec2f
-{
-  float x;
-  float y;
-  explicit Vec2f(){};
-  explicit Vec2f(float x0, float y0) : x(x0), y(y0){};
-  Vec2f& operator=(const Vec2f& rhs){x = rhs.x; y = rhs.y; return *this;};
-  Vec2f& operator+=(const Vec2f& rhs){x += rhs.x; y += rhs.y; return *this;};
-  Vec2f& operator-=(const Vec2f& rhs){x -= rhs.x; y -= rhs.y; return *this;};
-  Vec2f& operator*=(float rhs){x *= rhs; y *= rhs; return *this;};
-  Vec2f& operator/=(float rhs){x /= rhs; y /= rhs; return *this;};
-  Vec2f operator-(){return Vec2f(-x, -y);};
-  float norm2()const {return x*x + y*y;}
-  float norm()const {return sqrt(x*x + y*y);}
-  void normalize(){float abs = norm(); x /= abs; y /= abs;}
-  float dot(const Vec2f& rhs){return x * rhs.x + y * rhs.y;}
-};
-Vec2f operator+(Vec2f lhs, const Vec2f& rhs){return lhs += rhs;}
-Vec2f operator-(Vec2f lhs, const Vec2f& rhs){return lhs -= rhs;}
-Vec2f operator*(float lhs, Vec2f rhs){return rhs *= lhs;}
-
-
-struct Vec3f
-{
-    float x;
-    float y;
-    float z;
-    Vec3f& operator=(const Vec3f& rhs){x = rhs.x; y = rhs.y; z = rhs.z; return *this;};
-    Vec3f& operator+=(const Vec3f& rhs){x += rhs.x; y += rhs.y; z += rhs.z; return *this;};
-    Vec3f& operator-=(const Vec3f& rhs){x -= rhs.x; y -= rhs.y; z -= rhs.z; return *this;};
-};
-Vec3f operator+(Vec3f lhs, const Vec3f& rhs){return lhs += rhs;}
-Vec3f operator-(Vec3f lhs, const Vec3f& rhs){return lhs -= rhs;}
-
-struct Vec4f
-{
-    float x;
-    float y;
-    float z;
-    float w;
-};
-typedef Vec2f Edge2f[2];
-
 
 
 #define SCREEN_WIDTH  640
@@ -276,7 +224,7 @@ Vec2f intersect(const Vec2f& v0, const Vec2f& v1, const Edge2f& boundary)
   float dot0 = tmp0.dot(tmp1);
   float m[4] = {1, dot0, dot0, 1};
   Vec2f tmp3((boundary[0] - v0).dot(tmp0), (v0 - boundary[0]).dot(tmp1));
-  Vec2f param = mul_m22_v2(m, tmp3);
+  Vec2f param = mul_m22_v2(m, tmp3)/(1 - dot0 * dot0);
   return v0 + param.x * tmp0;
 }
 
@@ -324,7 +272,19 @@ int hodge(Vec2f* v, float* clips, Vec2f* dst)
     Edge2f right = {Vec2f(B_RIGHT, B_BOTTOM), Vec2f(B_RIGHT, B_TOP)};
     vnum = hodge0(v, vnum, bottom, buf[0]);
     vnum = hodge0(buf[0], vnum, right, buf[1]);
+    Vec2f aaa = intersect(Vec2f(0, 0), Vec2f(200, 200), top);
+    printf("test:%f, %f\n", aaa.x, aaa.y);
+    for(int i = 0; i < vnum; ++i)
+      {
+	//	lineto(c, result[i]);
+	printf("%d: %f, %f\n", i, buf[1][i].x, buf[1][i].y);
+      }
     vnum = hodge0(buf[1], vnum, top, buf[0]);
+    for(int i = 0; i < vnum; ++i)
+      {
+	//	lineto(c, result[i]);
+	printf("%d: %f, %f\n", i, buf[0][i].x, buf[0][i].y);
+      }
     vnum = hodge0(buf[0], vnum, left, dst);
     return vnum;
 }
@@ -339,16 +299,31 @@ void triangle_setup()
 
 }
 
+void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
+{
+  if(num = 0)return;
+  moveto(v[0]);
+  for(int i = 1; i < num; ++i)
+    {
+      lineto(c, v[i]);
+    }
+  lineto(c, v[0]);
+}
+
 void render()
 {
     if( SDL_LockSurface( gScreenSurface ) == -1 )return;// サーフェースをロック
-    SDL_Color c;
-    c.r = 0;
-    c.g = 0;
-    c.b = 255;
+    SDL_Color blue;
+    blue.r = 0;
+    blue.g = 0;
+    blue.b = 255;
+    SDL_Color red;
+    red.r = 255;
+    red.g = 0;
+    red.b = 0;
     
     // 色を指定したピクセルフォーマット用の色情報に変換
-    Uint32 newColor = SDL_MapRGB( gScreenSurface->format, c.r, c.g, c.b );
+    Uint32 newColor = SDL_MapRGB( gScreenSurface->format, blue.r, blue.g, blue.b );
     for(int y = 30; y < 100; ++y)
 	for(int x = 100; x < 200; ++x)
 	    PutColor( gScreenSurface, x, y, newColor );
@@ -358,30 +333,24 @@ void render()
 
 
     moveto(B_RIGHT, B_BOTTOM);
-    lineto(&c, B_RIGHT, B_TOP);
-    lineto(&c, B_LEFT, B_TOP);
-    lineto(&c, B_LEFT, B_BOTTOM);
-    lineto(&c, B_RIGHT, B_BOTTOM);
-
-
+    lineto(&blue, B_RIGHT, B_TOP);
+    lineto(&blue, B_LEFT, B_TOP);
+    lineto(&blue, B_LEFT, B_BOTTOM);
+    lineto(&blue, B_RIGHT, B_BOTTOM);
 
     // input Vec2f * 3, clips(left, right, top, bottom)
     // output return dst_n, Vec2f * dst_n
     //int hodge(Vec2f* v, float* clips, Vec2f* dst)
     Vec2f result[30];
     Vec2f input[3] = {
-      Vec2f(0.f, 0.f),
-      Vec2f(100.f, 100.f),
-      Vec2f(30.f, 60.f),
+      Vec2f(200.f, 0.f),
+      Vec2f(0.f, 400.f),
+      Vec2f(440.f, 500.f),
     };
+    draw_poly_raw(blue, input, 3);
     float xxxx;
     int num = hodge(input, &xxxx, result);
-    moveto(result[0]);
-    for(int i = 1; i < num; ++i)
-      {
-	lineto(c, result[i]);
-	printf("%d: %f, %f\n", i, result[i].x, result[i].y);
-      }
+    draw_poly_raw(red, input, num);
 
     SDL_UnlockSurface( gScreenSurface );// ロックを解除
 }
