@@ -21,6 +21,18 @@ bool Init();      // 初期化処理
 void End();       // 終了処理
 bool PollEvent(); // イベント処理
 
+
+void sdlerror(const char* str = 0)
+{
+  if (strlen(SDL_GetError()) != 0) {
+    if(str)printf(str);
+    printf("SDL_Error : %s\n", SDL_GetError());
+    exit(-1);
+    SDL_ClearError();
+  }
+}
+
+
 SDL_Surface *gScreenSurface;
 SDL_Color GetColor( SDL_Surface* pSurface, int x, int y )
 {
@@ -301,7 +313,7 @@ void triangle_setup()
 
 void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
 {
-  if(num = 0)return;
+  if(num == 0)return;
   moveto(v[0]);
   for(int i = 1; i < num; ++i)
     {
@@ -312,6 +324,7 @@ void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
 
 void render()
 {
+    sdlerror();
     if( SDL_LockSurface( gScreenSurface ) == -1 )return;// サーフェースをロック
     SDL_Color blue;
     blue.r = 0;
@@ -343,15 +356,14 @@ void render()
     //int hodge(Vec2f* v, float* clips, Vec2f* dst)
     Vec2f result[30];
     Vec2f input[3] = {
-      Vec2f(200.f, 0.f),
-      Vec2f(0.f, 400.f),
-      Vec2f(440.f, 500.f),
+      Vec2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
+      //Vec2f(0.f, 0.f),  Vec2f(200.f, 200.f), Vec2f(30.f, 60.f),
     };
     draw_poly_raw(blue, input, 3);
     float xxxx;
     int num = hodge(input, &xxxx, result);
-    draw_poly_raw(red, input, num);
-
+    draw_poly_raw(red, result, num);
+    sdlerror();
     SDL_UnlockSurface( gScreenSurface );// ロックを解除
 }
 
@@ -375,12 +387,12 @@ void FillScreen( int r, int g, int b )
     FillScreen( Color );
 }
 
-
 int main(int argc, char* argv[])
 {
+  sdlerror();
     // 初期化
     if( !Init() ){
-	printf( "error.:%s\n", SDL_GetError());
+      sdlerror();
 	return 0;
     }
 
@@ -404,14 +416,20 @@ int main(int argc, char* argv[])
 // 初期化処理
 bool Init()
 {
+    sdlerror("-1");
     // SDLの初期化
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
-	printf(SDL_GetError());
+      sdlerror();
 	return false;
     }
+    // 何故かエラーがでるので、ここでクリアしておく。
+    SDL_ClearError();
+
+    sdlerror("0");
     // キャプションの設定
     SDL_WM_SetCaption( GAME_CAPTION, NULL );
+    sdlerror("1");
 
     // ウィンドウの初期化
     gScreenSurface = SDL_SetVideoMode(
@@ -420,6 +438,7 @@ bool Init()
 	SCREEN_BPP,
 	SDL_SWSURFACE//|SDL_FULLSCREEN
 	);
+    sdlerror("2");
 
     // マウスカーソルを消す場合は
     // SDL_ShowCursor(SDL_DISABLE );

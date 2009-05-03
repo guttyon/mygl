@@ -1,7 +1,13 @@
-OBJS=mygl.o
+CXXFLAGS = -Wall
+
+OBJS = mygl.o
+
 
 mygl:$(OBJS)
 	g++ -lSDL $< -o $@
+
+clean:
+	rm mygl $(OBJS)
 
 test: mygl
 	./$<
