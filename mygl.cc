@@ -1,4 +1,4 @@
-﻿s#include <stdio.h>
+#include <stdio.h>
 #include <SDL/SDL.h>
 
 //#pragma comment(lib, "SDL.lib")

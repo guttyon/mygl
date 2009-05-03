@@ -1,3 +1,7 @@
 a.out
 mygl
 *.o
+GPATH
+GRTAGS
+GSYMS
+GTAGS
