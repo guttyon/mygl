@@ -1,4 +1,4 @@
-s#include <stdio.h>
+﻿s#include <stdio.h>
 #include <SDL/SDL.h>
 
 //#pragma comment(lib, "SDL.lib")
@@ -9,25 +9,25 @@ s#include <stdio.h>
 #define SCREEN_BPP    32
 #define GAME_CAPTION  "SDLTutorial"
 
-bool Init();      // $B=i4|2==hM}(B
-void End();       // $B=*N;=hM}(B
-bool PollEvent(); // $B%$%Y%s%H=hM}(B
+bool Init();      // 初期化処理
+void End();       // 終了処理
+bool PollEvent(); // イベント処理
 
 SDL_Surface *gScreenSurface;
 SDL_Color GetColor( SDL_Surface* pSurface, int x, int y )
 {
-    SDL_PixelFormat *fmt = pSurface->format;    // $B%T%/%;%k%U%)!<%^%C%H(B
-    Uint8 BitsPerPixel = fmt->BitsPerPixel;     // 1$B%T%/%;%k$"$?$j$N%S%C%H?t(B(bpp)
-    Uint8* pixels_8 = (Uint8*)pSurface->pixels; // $B@hF,%"%I%l%9(B
-    Uint16 pitch = pSurface->pitch;             // 1$B%i%$%s$N%P%$%H?t(B
-    Uint8 BytesPerPixel = fmt->BytesPerPixel;   // 1$B%T%/%;%k$"$?$j$N%P%$%H?t(B
+    SDL_PixelFormat *fmt = pSurface->format;    // ピクセルフォーマット
+    Uint8 BitsPerPixel = fmt->BitsPerPixel;     // 1ピクセルあたりのビット数(bpp)
+    Uint8* pixels_8 = (Uint8*)pSurface->pixels; // 先頭アドレス
+    Uint16 pitch = pSurface->pitch;             // 1ラインのバイト数
+    Uint8 BytesPerPixel = fmt->BytesPerPixel;   // 1ピクセルあたりのバイト数
 	
-    // $B0J>e$N>pJs$+$iL\E*$N%"%I%l%9$r;;=P(B
+    // 以上の情報から目的のアドレスを算出
     Uint8* target_pixels_8 = &pixels_8[ pitch*y + BytesPerPixel*x ];
 
     SDL_Color Color;
     switch( BitsPerPixel )
-    {// 1$B%T%/%;%k$"$?$j$N%S%C%H?t$K1~$8$F=hM}$rJ,$1$k(B
+    {// 1ピクセルあたりのビット数に応じて処理を分ける
 	case 8:
 	{
 	    Uint32 pixel = *(Uint8*)target_pixels_8;
@@ -60,16 +60,16 @@ SDL_Color GetColor( SDL_Surface* pSurface, int x, int y )
 
 void PutColor( SDL_Surface* pSurface, int x, int y, Uint32 Color )
 {
-    SDL_PixelFormat *fmt = pSurface->format;    // $B%T%/%;%k%U%)!<%^%C%H(B
-    Uint8 BitsPerPixel = fmt->BitsPerPixel;     // 1$B%T%/%;%k$"$?$j$N%S%C%H?t(B(bpp)
-    Uint8* pixels_8 = (Uint8*)pSurface->pixels; // $B@hF,%"%I%l%9(B
-    Uint16 pitch = pSurface->pitch;             // 1$B%i%$%s$N%P%$%H?t(B
-    Uint8 BytesPerPixel = fmt->BytesPerPixel;   // 1$B%T%/%;%k$"$?$j$N%P%$%H?t(B
+    SDL_PixelFormat *fmt = pSurface->format;    // ピクセルフォーマット
+    Uint8 BitsPerPixel = fmt->BitsPerPixel;     // 1ピクセルあたりのビット数(bpp)
+    Uint8* pixels_8 = (Uint8*)pSurface->pixels; // 先頭アドレス
+    Uint16 pitch = pSurface->pitch;             // 1ラインのバイト数
+    Uint8 BytesPerPixel = fmt->BytesPerPixel;   // 1ピクセルあたりのバイト数
 	
-    // $B0J>e$N>pJs$+$iL\E*$N%"%I%l%9$r;;=P(B
+    // 以上の情報から目的のアドレスを算出
     Uint8* target_pixels_8 = &pixels_8[ pitch*y + BytesPerPixel*x ];
     switch( BitsPerPixel )
-    {// 1$B%T%/%;%k$"$?$j$N%S%C%H?t$K1~$8$F=hM}$rJ,$1$k(B
+    {// 1ピクセルあたりのビット数に応じて処理を分ける
 	case 8:
 	    *target_pixels_8 = Color;
 	    break;
@@ -95,37 +95,37 @@ void PutColor( SDL_Surface* pSurface, int x, int y, Uint32 Color )
 
 void WhiteOut()
 {
-    if( SDL_LockSurface( gScreenSurface ) == -1 )return;// $B%5!<%U%'!<%9$r%m%C%/(B
+    if( SDL_LockSurface( gScreenSurface ) == -1 )return;// サーフェースをロック
     for( int y = 0 ; y < 480 ; y++ ){
 	for( int x = 0 ; x < 639 ; x++ ){
 			
-	    // $B%T%/%;%k$N?'$r<hF@(B
+	    // ピクセルの色を取得
 	    SDL_Color Color = GetColor( gScreenSurface, x, y );
 	    float r = (float)Color.r;
 	    float g = (float)Color.g;
 	    float b = (float)Color.b;
 			
-	    // $B<hF@$7$??'$HGr?'$H:.$<$k(B
+	    // 取得した色と白色と混ぜる
 	    r = r * 0.75f + 255.0f * 0.25f;
 	    g = g * 0.75f + 255.0f * 0.25f;
 	    b = b * 0.75f + 255.0f * 0.25f;
 			
-	    // $B:GBgCM$N%A%'%C%/(B
+	    // 最大値のチェック
 	    if( r > 255.0f )r = 255.0f;
 	    if( g > 255.0f )g = 255.0f;
 	    if( b > 255.0f )b = 255.0f;
 			
-	    // $B?'$r;XDj$7$?%T%/%;%k%U%)!<%^%C%HMQ$N?'>pJs$KJQ49(B
+	    // 色を指定したピクセルフォーマット用の色情報に変換
 	    Uint32 newColor = SDL_MapRGB( gScreenSurface->format, (Uint8)r, (Uint8)g, (Uint8)b );
 	    PutColor( gScreenSurface, x, y, newColor );
 	}
     }
-    SDL_UnlockSurface( gScreenSurface );// $B%m%C%/$r2r=|(B
+    SDL_UnlockSurface( gScreenSurface );// ロックを解除
 }
 
 void line(const SDL_Color* c, int x0, int y0, int x1, int y1)
 {
-    // $B?'$r;XDj$7$?%T%/%;%k%U%)!<%^%C%HMQ$N?'>pJs$KJQ49(B
+    // 色を指定したピクセルフォーマット用の色情報に変換
     Uint32 newColor = SDL_MapRGB( gScreenSurface->format, c->r, c->g, c->b );
     int distx = x1 - x0;
     int disty = y1 - y0;
@@ -185,13 +185,13 @@ void lineto(const SDL_Color* c, int x, int y)
 
 void render()
 {
-    if( SDL_LockSurface( gScreenSurface ) == -1 )return;// $B%5!<%U%'!<%9$r%m%C%/(B
+    if( SDL_LockSurface( gScreenSurface ) == -1 )return;// サーフェースをロック
     SDL_Color c;
     c.r = 0;
     c.g = 0;
     c.b = 255;
     
-    // $B?'$r;XDj$7$?%T%/%;%k%U%)!<%^%C%HMQ$N?'>pJs$KJQ49(B
+    // 色を指定したピクセルフォーマット用の色情報に変換
     Uint32 newColor = SDL_MapRGB( gScreenSurface->format, c.r, c.g, c.b );
     for(int y = 30; y < 100; ++y)
 	for(int x = 100; x < 200; ++x)
@@ -211,7 +211,7 @@ void render()
     lineto(&c, B_LEFT, B_BOTTOM);
     lineto(&c, B_RIGHT, B_BOTTOM);
 
-    SDL_UnlockSurface( gScreenSurface );// $B%m%C%/$r2r=|(B
+    SDL_UnlockSurface( gScreenSurface );// ロックを解除
 }
 
 struct Vec2i
@@ -327,10 +327,10 @@ void triangle_setup()
 
 
 
-// $BEI$j$D$V$9(B
+// 塗りつぶす
 void FillScreen( SDL_Color Color )
 {
-    // $B?'$r;XDj$7$?%T%/%;%k%U%)!<%^%C%HMQ$N?'>pJs$KJQ49(B
+    // 色を指定したピクセルフォーマット用の色情報に変換
     Uint32 color = SDL_MapRGB( gScreenSurface->format, Color.r, Color.g, Color.b );
 	
     SDL_Rect dest;
@@ -349,42 +349,42 @@ void FillScreen( int r, int g, int b )
 
 int main(int argc, char* argv[])
 {
-    // $B=i4|2=(B
+    // 初期化
     if( !Init() ){
 	printf( "error.:%s\n", SDL_GetError());
 	return 0;
     }
 
-    // $B%a%$%s%k!<%W(B
+    // メインループ
     while( 1 ){
 	// WhiteOut();
 	render();
-	// $B2hLL$r99?7$7$^$9(B
+	// 画面を更新します
 	SDL_Flip( gScreenSurface );
 
-	// $B%$%Y%s%H=hM}(B
+	// イベント処理
 	if( !PollEvent() )break;
     }
 
-    // $B=*N;=hM}(B
+    // 終了処理
     End();
 
     return 0;
 }
 
-// $B=i4|2==hM}(B
+// 初期化処理
 bool Init()
 {
-    // SDL$B$N=i4|2=(B
+    // SDLの初期化
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
 	printf(SDL_GetError());
 	return false;
     }
-    // $B%-%c%W%7%g%s$N@_Dj(B
+    // キャプションの設定
     SDL_WM_SetCaption( GAME_CAPTION, NULL );
 
-    // $B%&%#%s%I%&$N=i4|2=(B
+    // ウィンドウの初期化
     gScreenSurface = SDL_SetVideoMode(
 	SCREEN_WIDTH,
 	SCREEN_HEIGHT,
@@ -392,19 +392,19 @@ bool Init()
 	SDL_SWSURFACE//|SDL_FULLSCREEN
 	);
 
-    // $B%^%&%9%+!<%=%k$r>C$9>l9g$O(B
+    // マウスカーソルを消す場合は
     // SDL_ShowCursor(SDL_DISABLE );
     return gScreenSurface != NULL;
 }
 
-// $B=*N;=hM}(B
+// 終了処理
 void End()
 {
-    // SDL$B$N=*N;(B
+    // SDLの終了
     SDL_Quit();
 }
 
-// $B%$%Y%s%H=hM}(B
+// イベント処理
 bool PollEvent()
 {
     SDL_Event ev;
@@ -412,13 +412,13 @@ bool PollEvent()
     while(SDL_PollEvent(&ev) )
     {
 	switch(ev.type){
-	    case SDL_QUIT:// $B%&%#%s%I%&$N(B$BNW%\%?%s$,2!$5$l$?;~$J$I(B
+	    case SDL_QUIT:// ウィンドウの臨ボタンが押された時など
 		return false;
 		break;
-	    case SDL_KEYDOWN:// $B%-!<%\!<%I$+$i$NF~NO$,$"$C$?;~(B
+	    case SDL_KEYDOWN:// キーボードからの入力があった時
 	    {
-		key=&(ev.key.keysym.sym); // $B$I$N%-!<$,2!$5$l$?$+$r<hF@(B
-		if(*key==27){// ESC$B%-!<(B
+		key=&(ev.key.keysym.sym); // どのキーが押されたかを取得
+		if(*key==27){// ESCキー
 		    return false;
 		}
 	    }
