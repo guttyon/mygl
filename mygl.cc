@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+#include <time.h>
 #include <SDL/SDL.h>
 #include "vec.h"
 
@@ -19,6 +20,29 @@ bool Init();      // 初期化処理
 void End();       // 終了処理
 bool PollEvent(); // イベント処理
 
+
+int debprint = 1;
+void debprintf(const char* format, ...)
+{
+  va_list ap;
+  va_start(ap, format);
+  if(debprint)
+    {
+      vprintf(format, ap);
+    }
+  va_end(ap);
+  return;
+}
+
+void nanoslp(unsigned long nsec)
+{
+  struct timespec treq, trem;
+
+  treq.tv_sec = (time_t)0;
+  treq.tv_nsec = nsec;
+  
+  nanosleep(&treq, &trem);
+}
 
 void sdlerror(const char* str = 0)
 {
@@ -404,7 +428,7 @@ int triangle_setup(const Vec2f* v, TriEdgePair* dst)
 	    {
 	      // 全部揃っている
 	      pairnum = 1;
-	      assert(0);
+	      assert(!"not implimented");
 	    }
 	  else
 	    {
@@ -417,7 +441,7 @@ int triangle_setup(const Vec2f* v, TriEdgePair* dst)
 		  // midは右側
 		  dst[0].left.x = v[min].x; // x
 		  dst[0].left.y = tmp0.x / tmp0.y; // dx
-		  dst[0].right.x = v[min].x; // x
+		  dst[0].right.x = v[mid].x; // x
 		  dst[0].right.y = tmp2.x / tmp2.y; // dx
 		  dst[0].bottom = v[min].y;
 		  dst[0].top = v[max].y;
@@ -427,11 +451,14 @@ int triangle_setup(const Vec2f* v, TriEdgePair* dst)
 		  // midは左側
 		  dst[0].right.x = v[min].x; // x
 		  dst[0].right.y = tmp0.x / tmp0.y; // dx
-		  dst[0].left.x = v[min].x; // x
+		  dst[0].left.x = v[mid].x; // x
 		  dst[0].left.y = tmp2.x / tmp2.y; // dx
 		  dst[0].bottom = v[min].y;
 		  dst[0].top = v[max].y;
 		}
+	      // debprintf("hello2: max=%d, mid=%d, min=%d\n", max, mid, min);
+	      // debprintf("hello2: max=%f,%f, mid=%f,%f, min=%f,%f\n", v[max].x, v[max].y, v[mid].x, v[mid].y, v[min].x, v[min].y);
+	      // debprintf("hello2: %f, %f, %f, %f, %f, %f\n", dst[0].left.x, dst[0].right.x, dst[0].top, dst[0].bottom, dst[0].left.y, dst[0].right.y);
 	    }
 	}
       else if((int)v[mid].y == (int)v[max].y)
@@ -460,6 +487,9 @@ int triangle_setup(const Vec2f* v, TriEdgePair* dst)
 	      dst[0].bottom = v[min].y;
 	      dst[0].top = v[max].y;
 	    }
+	  // debprintf("hello: max=%d, mid=%d, min=%d\n", max, mid, min);
+	  // debprintf("hello: max=%f,%f, mid=%f,%f, min=%f,%f\n", v[max].x, v[max].y, v[mid].x, v[mid].y, v[min].x, v[min].y);
+	  // debprintf("hello: %f, %f, %f, %f, %f, %f\n", dst[0].left.x, dst[0].right.x, dst[0].top, dst[0].bottom, dst[0].left.y, dst[0].right.y);
 	}
       else
 	{
@@ -523,6 +553,7 @@ void draw_scanline_interpolate(const TriEdgePair& epair)
   float dx1 = epair.right.y;
   for(int y = (int)epair.bottom; y < (int)epair.top; ++y)
     {
+      //      nanoslp(1000);
       moveto((int)x0, y);
       lineto((int)x1, y);
       x0 += dx0;
@@ -550,6 +581,7 @@ void draw_triangle(const Vec2f* v)
 	  int epnum = triangle_setup(result + j, epair);
 	  for(int i = 0; i < epnum; ++i)
 	    {
+	      // debprintf("%d, %d: %f, %f, %f, %f\n", j, i, epair[i].left.x, epair[i].right.x, epair[i].top, epair[i].bottom);
 	      draw_scanline_interpolate(epair[i]);
 	    }
 	  result[j + 1] = result[0]; // fan中心をコピーして毎回連続配列になるようにする。最後のコピーは無駄だが、配列はあふれないので放っとく。
@@ -771,14 +803,17 @@ bool PollEvent()
     while(SDL_PollEvent(&ev) )
     {
 	switch(ev.type){
-	    case SDL_QUIT:// ウィンドウの臨ボタンが押された時など
+	    case SDL_QUIT:// ウィンドウの閉じる(×)ボタンが押された時など
 		return false;
 		break;
 	    case SDL_KEYDOWN:// キーボードからの入力があった時
 	    {
 		key=&(ev.key.keysym.sym); // どのキーが押されたかを取得
-		if(*key==27){// ESCキー
+		if(*key==27 || *key=='q'){// ESCキー
 		    return false;
+		}
+		else if(*key=='s'){// ESCキー
+		  debprint = debprint ? 0 : 1;
 		}
 	    }
 	    break;

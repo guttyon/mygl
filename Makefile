@@ -6,6 +6,10 @@ OBJS = mygl.o
 mygl:$(OBJS)
 	g++ -g -lSDL $< -o $@
 
+# 比較用
+mygl2:$(OBJS)
+	g++ -g -lSDL $< -o $@
+
 clean:
 	rm mygl $(OBJS)
 
