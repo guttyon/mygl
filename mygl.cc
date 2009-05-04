@@ -3,9 +3,6 @@
 #include <SDL/SDL.h>
 #include "vec.h"
 
-//#pragma comment(lib, "SDL.lib")
-//#pragma comment(lib, "SDLmain.lib")
-
 #define B_TOP 100
 #define B_BOTTOM 400
 #define B_LEFT 100
@@ -212,6 +209,16 @@ void lineto(const SDL_Color& c, const Vec2f& v)
   draw0x = (int)v.x;
   draw0y = (int)v.y;
 }
+void lineto(const Vec2f& v)
+{
+  SDL_Color c = {0, 255, 0};
+  lineto(c, v);
+}
+void lineto(int x, int y)
+{
+  SDL_Color c = {0, 255, 0};
+  lineto(&c, x, y);
+}
 
 
 bool inside(const Vec2f& v, const Edge2f& boundary)
@@ -227,6 +234,17 @@ Vec2f mul_m22_v2(float* m, Vec2f& v)
   tmp.y = m[2] * v.x + m[3] * v.y;
   return tmp;
 }
+Vec4f mul_m44_v4(float* m, Vec4f& v)
+{
+  Vec4f tmp;
+  tmp.x = m[0] * v.x + m[1] * v.y + m[2] * v.z + m[3] * v.w;
+  tmp.y = m[4] * v.x + m[5] * v.y + m[6] * v.z + m[7] * v.w;
+  tmp.z = m[8] * v.x + m[9] * v.y + m[10] * v.z + m[11] * v.w;
+  tmp.w = m[12] * v.x + m[13] * v.y + m[14] * v.z + m[15] * v.w;
+  return tmp;
+}
+
+
 Vec2f intersect(const Vec2f& v0, const Vec2f& v1, const Edge2f& boundary)
 {
   Vec2f tmp0 = v1 - v0;
@@ -274,7 +292,7 @@ int hodge0(const Vec2f* src, int vnum, const Edge2f& boundary, Vec2f* dst)
 
 // input Vec2f * 3, clips(left, right, top, bottom)
 // output return dst_n, Vec2f * dst_n
-int hodge(Vec2f* v, float* clips, Vec2f* dst)
+int hodge(const Vec2f* v, float* clips, Vec2f* dst)
 {
     int vnum = 3;
     Vec2f buf[2][30];
@@ -284,31 +302,124 @@ int hodge(Vec2f* v, float* clips, Vec2f* dst)
     Edge2f right = {Vec2f(B_RIGHT, B_BOTTOM), Vec2f(B_RIGHT, B_TOP)};
     vnum = hodge0(v, vnum, bottom, buf[0]);
     vnum = hodge0(buf[0], vnum, right, buf[1]);
-    Vec2f aaa = intersect(Vec2f(0, 0), Vec2f(200, 200), top);
-    printf("test:%f, %f\n", aaa.x, aaa.y);
-    for(int i = 0; i < vnum; ++i)
-      {
-	//	lineto(c, result[i]);
-	printf("%d: %f, %f\n", i, buf[1][i].x, buf[1][i].y);
-      }
     vnum = hodge0(buf[1], vnum, top, buf[0]);
-    for(int i = 0; i < vnum; ++i)
-      {
-	//	lineto(c, result[i]);
-	printf("%d: %f, %f\n", i, buf[0][i].x, buf[0][i].y);
-      }
     vnum = hodge0(buf[0], vnum, left, dst);
     return vnum;
 }
+
+struct TriEdgePair
+{
+// egde_pair(left_egde(x, dx), right_egde(x, dx))
+// and y0, y1.
+  Vec2f left;
+  Vec2f right;
+  float bottom;
+  float top;
+};
 
 
 // input: vertex, 
 // output: 
 // egde_pair(left_egde(x, dx), right_egde(x, dx))
 // and y0, y1.
-void triangle_setup()
+// return TriEdgePair num
+int triangle_setup(const Vec2f* v, TriEdgePair* dst)
 {
+  float xxxx;
+  Vec2f result[30];
+  int vnum = hodge(v, &xxxx, result);  
+  float miny = v[0].y;
+  int minidx = 0;
+  float maxy = v[0].y;
+  int maxidx = 0;
+  // search min y
+  for(int i = 0; i < vnum; ++i)
+    {
+      if(v[i].y < miny)
+	{
+	  miny = v[i].y;
+	  minidx = i;
+	}
+      else if(v[i].y > maxy)
+	{
+	  maxy = v[i].y;
+	  maxidx = i;
+	}
+    }
+  Vec2f left[20];
+  Vec2f right[20];
+  int llen, rlen;
+  // minはright, maxはleft
+  if(maxidx > minidx)
+    {
+      rlen = maxidx - minidx;
+      memcpy(right, v + minidx, sizeof(Vec2f) * (maxidx - minidx));
+      llen = vnum - maxidx + minidx;
+      memcpy(left, v + maxidx, sizeof(Vec2f) * (vnum - maxidx)); // wrap
+      memcpy(left, v + 0, sizeof(Vec2f) * minidx);
+    }
+  else
+    {
+      rlen = vnum - minidx + maxidx;
+      memcpy(right, v + minidx, sizeof(Vec2f) * (vnum - minidx));
+      memcpy(right, v + 0, sizeof(Vec2f) * maxidx); // wrap
+      llen = minidx - maxidx;
+      memcpy(left, v + maxidx, sizeof(Vec2f) * (minidx - maxidx));
+    }
+  // test
+  moveto(left[0]);
+  for(int i = 0; i < llen; ++i)
+    {
+      lineto(left[i]);
+      printf("left %d: %f, %f\n", i, left[i].x, left[i].y);
+    }
+  moveto(right[0]);
+  for(int i = 0; i < rlen; ++i)
+    {
+      lineto(right[i]);
+      printf("right %d: %f, %f\n", i, right[i].x, right[i].y);
+    }
+  // create edge pair
+  // 三角形だけにこだわればいい。クリップ済み多角形は、strip処理にまかせればよい。
+  // strip処理では、三角形分割し、この関数が処理する。
+  for(int i = 0; i < vnum; ++i)
+    {
+      //      v[minidx]
 
+    }
+}
+
+void draw_scanline_interpolate(const TriEdgePair& epair)
+{
+  float x0 = epair.left.x;
+  float dx0 = epair.left.y;
+  float x1 = epair.right.x;
+  float dx1 = epair.right.y;
+  for(int y = (int)epair.bottom; y < (int)epair.top; ++y)
+    {
+      moveto((int)x0, y);
+      lineto((int)x1, y);
+      x0 += dx0;
+      x1 += dx1;
+    }
+}
+
+void draw_triangle(const Vec2f* v)
+{
+  TriEdgePair epair[30];
+  int epnum = triangle_setup(v, epair);
+  for(int i = 0; i < epnum; ++i)
+    {
+      draw_scanline_interpolate(epair[i]);
+    }
+}
+void draw_strip(const Vec2f* v, int vnum)
+{
+  if(vnum < 3)return;
+  for(int i = 0; i < vnum - 2; ++i)
+    {
+      draw_triangle(v + i);
+    }
 }
 
 void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
@@ -356,13 +467,20 @@ void render()
     //int hodge(Vec2f* v, float* clips, Vec2f* dst)
     Vec2f result[30];
     Vec2f input[3] = {
-      Vec2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
+      Vec2f(200.f, 200.f),  Vec2f(200.f, 400.f), Vec2f(300.f, 340.f),
+      //c2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
       //Vec2f(0.f, 0.f),  Vec2f(200.f, 200.f), Vec2f(30.f, 60.f),
     };
     draw_poly_raw(blue, input, 3);
     float xxxx;
     int num = hodge(input, &xxxx, result);
     draw_poly_raw(red, result, num);
+
+    // int triangle_setup(const Vec2f* v, TriEdgePair* dst)
+    TriEdgePair dst[30];
+    triangle_setup(result, dst);
+
+
     sdlerror();
     SDL_UnlockSurface( gScreenSurface );// ロックを解除
 }

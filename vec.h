@@ -49,6 +49,19 @@ struct Vec4f
     float y;
     float z;
     float w;
+  explicit Vec4f(){};
+  explicit Vec4f(float x0, float y0, float z0, float w0) : x(x0), y(y0), z(z0), w(w0){};
+  Vec4f& operator=(const Vec4f& rhs){x = rhs.x; y = rhs.y; z = rhs.z; w = rhs.w; return *this;};
+  Vec4f& operator+=(const Vec4f& rhs){x += rhs.x; y += rhs.y; z += rhs.z; w += rhs.w; return *this;};
+  Vec4f& operator-=(const Vec4f& rhs){x -= rhs.x; y -= rhs.y; z -= rhs.z; w -= rhs.w; return *this;};
+  Vec4f& operator*=(float rhs){x *= rhs; y *= rhs; z *= rhs; w *= rhs; return *this;};
+  Vec4f& operator/=(float rhs){x /= rhs; y /= rhs; z /= rhs; w /= rhs; return *this;};
+  Vec4f operator/(float rhs){return Vec4f(x/rhs, y/rhs, z/rhs, w/rhs);};
+  Vec4f operator-(){return Vec4f(-x, -y, -z, -w);};
+  float norm2()const {return x*x + y*y + z*z + w*w;}
+  float norm()const {return sqrt(x*x + y*y + z*z + w*w);}
+  void normalize(){float abs = norm(); *this /= abs;}
+  float dot(const Vec4f& rhs){return  x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;}
 };
 typedef Vec2f Edge2f[2];
 
