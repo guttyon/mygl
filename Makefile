@@ -14,5 +14,5 @@ test: mygl
 
 gitpush:
 	@# ファイルはBOMの無い、UTF-8Nで保存すること。
-	@# git remote add assembla git@git.assembla.com:guttyon.git 
+	@# git remote add assembla git@git.assembla.com:mygl.git 
 	git push assembla master
