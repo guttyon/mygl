@@ -1,10 +1,10 @@
-CXXFLAGS = -Wall
+CXXFLAGS = -Wall -g
 
 OBJS = mygl.o
 
 
 mygl:$(OBJS)
-	g++ -lSDL $< -o $@
+	g++ -g -lSDL $< -o $@
 
 clean:
 	rm mygl $(OBJS)

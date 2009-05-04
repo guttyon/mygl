@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 #include <SDL/SDL.h>
 #include "vec.h"
 
@@ -245,7 +246,30 @@ Vec4f mul_m44_v4(float* m, Vec4f& v)
 }
 
 
-Vec2f intersect(const Vec2f& v0, const Vec2f& v1, const Edge2f& boundary)
+Vec2f intersect_line_line(const Vec2f& v0, const Vec2f& v1, const Edge2f& boundary)
+{
+  Vec2f tmp0 = v1 - v0;
+  Vec2f tmp1 = boundary[1] - boundary[0];
+  tmp0.normalize();
+  tmp1.normalize();
+  float dot0 = tmp0.dot(tmp1);
+  float m[4] = {1, dot0, dot0, 1};
+  Vec2f tmp3((boundary[0] - v0).dot(tmp0), (v0 - boundary[0]).dot(tmp1));
+  Vec2f param = mul_m22_v2(m, tmp3)/(1 - dot0 * dot0);
+  return v0 + param.x * tmp0;
+}
+
+// 水平線との交点までの、線分v0v1に対するパラメータt[0.0 ... 1.0]を返す。
+// 交点があることを前提とする。
+// 
+float intersect_line_hline(const Vec2f& v0, const Vec2f& v1, const float y)
+{
+  //Vec2f tmp0 = v1 - v0;
+  float t = (y - v0.y) / (v1.y - v0.y);
+  return t;
+}
+
+Vec2f intersect_line_plane(const Vec2f& v0, const Vec2f& v1, const Edge2f& boundary)
 {
   Vec2f tmp0 = v1 - v0;
   Vec2f tmp1 = boundary[1] - boundary[0];
@@ -274,7 +298,7 @@ int hodge0(const Vec2f* src, int vnum, const Edge2f& boundary, Vec2f* dst)
 	    }
 	    else
 	    {
-		dst[outnum++] = intersect(s, p, boundary);
+		dst[outnum++] = intersect_line_plane(s, p, boundary);
 		dst[outnum++] = p;
 	    }
 	}
@@ -282,7 +306,7 @@ int hodge0(const Vec2f* src, int vnum, const Edge2f& boundary, Vec2f* dst)
 	{
 	    if(inside(s, boundary))
 	    {
-		dst[outnum++] = intersect(s, p, boundary);
+		dst[outnum++] = intersect_line_plane(s, p, boundary);
 	    }
 	}
 	s = p;
@@ -325,68 +349,170 @@ struct TriEdgePair
 // return TriEdgePair num
 int triangle_setup(const Vec2f* v, TriEdgePair* dst)
 {
-  float xxxx;
-  Vec2f result[30];
-  int vnum = hodge(v, &xxxx, result);  
-  float miny = v[0].y;
-  int minidx = 0;
-  float maxy = v[0].y;
-  int maxidx = 0;
-  // search min y
-  for(int i = 0; i < vnum; ++i)
+  int min, mid, max;
+  // search middle y
     {
-      if(v[i].y < miny)
+      if(v[0].y < v[1].y)
 	{
-	  miny = v[i].y;
-	  minidx = i;
+	  if(v[1].y < v[2].y)
+	    {
+	      mid = 1;
+	      max = 2;
+	      min = 0;
+	    }
+	  else if(v[0].y < v[2].y)
+	    {
+	      mid = 2;
+	      max = 1;
+	      min = 0;
+	    }
+	  else
+	    {
+	      mid = 0;
+	      max = 1;
+	      min = 2;
+	    }
 	}
-      else if(v[i].y > maxy)
+      else
 	{
-	  maxy = v[i].y;
-	  maxidx = i;
+	  if(v[0].y < v[2].y)
+	    {
+	      mid = 0;
+	      max = 2;
+	      min = 1;
+	    }
+	  else if(v[1].y < v[2].y)
+	    {
+	      mid = 2;
+	      max = 0;
+	      min = 1;
+	    }
+	  else
+	    {
+	      mid = 1;
+	      max = 0;
+	      min = 2;
+	    }
 	}
     }
-  Vec2f left[20];
-  Vec2f right[20];
-  int llen, rlen;
-  // minはright, maxはleft
-  if(maxidx > minidx)
+    int pairnum;
+    // create edge
     {
-      rlen = maxidx - minidx;
-      memcpy(right, v + minidx, sizeof(Vec2f) * (maxidx - minidx));
-      llen = vnum - maxidx + minidx;
-      memcpy(left, v + maxidx, sizeof(Vec2f) * (vnum - maxidx)); // wrap
-      memcpy(left, v + 0, sizeof(Vec2f) * minidx);
+      if((int)v[mid].y == (int)v[min].y)
+	{
+	  if((int)v[mid].y == (int)v[max].y)
+	    {
+	      // 全部揃っている
+	      pairnum = 1;
+	      assert(0);
+	    }
+	  else
+	    {
+	      // 下線が水平
+	      pairnum = 1;
+	      Vec2f tmp0 = v[max] - v[min];
+	      Vec2f tmp2 = v[max] - v[mid];
+	      if(v[min].x < v[mid].x)
+		{
+		  // midは右側
+		  dst[0].left.x = v[min].x; // x
+		  dst[0].left.y = tmp0.x / tmp0.y; // dx
+		  dst[0].right.x = v[min].x; // x
+		  dst[0].right.y = tmp2.x / tmp2.y; // dx
+		  dst[0].bottom = v[min].y;
+		  dst[0].top = v[max].y;
+		}
+	      else
+		{
+		  // midは左側
+		  dst[0].right.x = v[min].x; // x
+		  dst[0].right.y = tmp0.x / tmp0.y; // dx
+		  dst[0].left.x = v[min].x; // x
+		  dst[0].left.y = tmp2.x / tmp2.y; // dx
+		  dst[0].bottom = v[min].y;
+		  dst[0].top = v[max].y;
+		}
+	    }
+	}
+      else if((int)v[mid].y == (int)v[max].y)
+	{
+	  // 上線が水平
+	  pairnum = 1;
+	  Vec2f tmp0 = v[max] - v[min];
+	  Vec2f tmp1 = v[mid] - v[min];
+	  if(v[max].x < v[mid].x)
+	    {
+	      // midは右側
+	      dst[0].left.x = v[min].x; // x
+	      dst[0].left.y = tmp0.x / tmp0.y; // dx
+	      dst[0].right.x = v[min].x; // x
+	      dst[0].right.y = tmp1.x / tmp1.y; // dx
+	      dst[0].bottom = v[min].y;
+	      dst[0].top = v[max].y;
+	    }
+	  else
+	    {
+	      // midは左側
+	      dst[0].right.x = v[min].x; // x
+	      dst[0].right.y = tmp0.x / tmp0.y; // dx
+	      dst[0].left.x = v[min].x; // x
+	      dst[0].left.y = tmp1.x / tmp1.y; // dx
+	      dst[0].bottom = v[min].y;
+	      dst[0].top = v[max].y;
+	    }
+	}
+      else
+	{
+	  // いい感じの三角形
+	  // midから水平線を引き分割。
+	  pairnum = 2;
+	  float t = intersect_line_hline(v[min], v[max], v[mid].y);
+	  Vec2f tmp0 = v[max] - v[min];
+	  float tmp0_dx = tmp0.x / tmp0.y;
+	  Vec2f tmp1 = v[mid] - v[min];
+	  Vec2f tmp2 = v[max] - v[mid];
+	  Vec2f isec = v[min] + t * tmp0;
+	  if(isec.x < v[mid].x)
+	    {
+	      // midは右側
+	      dst[0].left.x = v[min].x; // x
+	      dst[0].left.y = tmp0_dx; // dx
+	      dst[0].right.x = v[min].x; // x
+	      dst[0].right.y = tmp1.x / tmp1.y; // dx
+	      dst[0].bottom = v[min].y;
+	      dst[0].top = isec.y;
+
+	      dst[1].left.x = isec.x; // x
+	      dst[1].left.y = tmp0_dx; // dx
+	      dst[1].right.x = v[mid].x; // x
+	      dst[1].right.y = tmp2.x / tmp2.y; // dx
+	      dst[1].bottom = v[mid].y;
+	      dst[1].top = v[max].y;
+	    }
+	  else
+	    {
+	      // midは左側
+	      dst[0].right.x = v[min].x; // x
+	      dst[0].right.y = tmp0_dx; // dx
+	      dst[0].left.x = v[min].x; // x
+	      dst[0].left.y = tmp1.x / tmp1.y; // dx
+	      dst[0].bottom = v[min].y;
+	      dst[0].top = isec.y;
+
+	      dst[1].right.x = isec.x; // x
+	      dst[1].right.y = tmp0_dx; // dx
+	      dst[1].left.x = v[mid].x; // x
+	      dst[1].left.y = tmp2.x / tmp2.y; // dx
+	      dst[1].bottom = v[mid].y;
+	      dst[1].top = v[max].y;
+	    }
+	}
     }
-  else
-    {
-      rlen = vnum - minidx + maxidx;
-      memcpy(right, v + minidx, sizeof(Vec2f) * (vnum - minidx));
-      memcpy(right, v + 0, sizeof(Vec2f) * maxidx); // wrap
-      llen = minidx - maxidx;
-      memcpy(left, v + maxidx, sizeof(Vec2f) * (minidx - maxidx));
-    }
-  // test
-  moveto(left[0]);
-  for(int i = 0; i < llen; ++i)
-    {
-      lineto(left[i]);
-      printf("left %d: %f, %f\n", i, left[i].x, left[i].y);
-    }
-  moveto(right[0]);
-  for(int i = 0; i < rlen; ++i)
-    {
-      lineto(right[i]);
-      printf("right %d: %f, %f\n", i, right[i].x, right[i].y);
-    }
+    return pairnum;
+
   // create edge pair
   // 三角形だけにこだわればいい。クリップ済み多角形は、strip処理にまかせればよい。
   // strip処理では、三角形分割し、この関数が処理する。
-  for(int i = 0; i < vnum; ++i)
-    {
-      //      v[minidx]
-
-    }
 }
 
 void draw_scanline_interpolate(const TriEdgePair& epair)
@@ -404,21 +530,91 @@ void draw_scanline_interpolate(const TriEdgePair& epair)
     }
 }
 
+bool need_clip(const Vec2f* v)
+{
+  return true;
+}
+
 void draw_triangle(const Vec2f* v)
 {
-  TriEdgePair epair[30];
-  int epnum = triangle_setup(v, epair);
-  for(int i = 0; i < epnum; ++i)
+  if(need_clip(v))
     {
-      draw_scanline_interpolate(epair[i]);
+      float xxxx;
+      Vec2f result[3 + 6]; // clipする度に点が１つふえる。clip面は6つあるので、点が最大６増える。
+      int vnum = hodge(v, &xxxx, result);
+      int triangle_num = vnum - 2;
+      // fan stripとして扱う。
+      for(int j = 0; j < triangle_num; ++j)
+	{
+	  TriEdgePair epair[2];
+	  int epnum = triangle_setup(result + j, epair);
+	  for(int i = 0; i < epnum; ++i)
+	    {
+	      draw_scanline_interpolate(epair[i]);
+	    }
+	  result[j + 1] = result[0]; // fan中心をコピーして毎回連続配列になるようにする。最後のコピーは無駄だが、配列はあふれないので放っとく。
+	}
+    }
+  else
+    {
+      TriEdgePair epair[2];
+      int epnum = triangle_setup(v, epair);
+      for(int i = 0; i < epnum; ++i)
+	{
+	  draw_scanline_interpolate(epair[i]);
+	}
     }
 }
-void draw_strip(const Vec2f* v, int vnum)
+enum E_PRIMITIVE
+  {
+    PRIMITIVE_POINTS,
+    PRIMITIVE_LINES,
+    PRIMITIVE_LINE_STRIP,
+    PRIMITIVE_LINE_LOOP,
+    PRIMITIVE_TRIANGLES,
+    PRIMITIVE_TRIANGLE_STRIP,
+    PRIMITIVE_TRIANGLE_FAN,
+    PRIMITIVE_QUADS, // fanで実装。
+    PRIMITIVE_QUAD_STRIP, // TRIANGLE_STRIPで実装
+    PRIMITIVE_POLYGON, // 凹はないのでfanで実装できる。
+  };
+void draw_triangle_strip(const Vec2f* v, int vnum)
 {
   if(vnum < 3)return;
+  Vec2f tmp[3];
+  // １つおきに三角形配列を逆にしないといけないので、結構面倒。
   for(int i = 0; i < vnum - 2; ++i)
     {
+      if(i & 1 == 0)
+	{
+	  draw_triangle(v + i);
+	}
+      else
+	{
+	  tmp[0] = v[i];
+	  tmp[1] = v[i + 2];
+	  tmp[2] = v[i + 1];
+	  draw_triangle(tmp);
+	}
+    }
+}
+void draw_triangles(const Vec2f* v, int vnum)
+{
+  if(vnum < 3)return;
+  for(int i = 0; i < vnum - 2; i += 3)
+    {
       draw_triangle(v + i);
+    }
+}
+void draw_triangle_fan(const Vec2f* v, int vnum)
+{
+  if(vnum < 3)return;
+  Vec2f tmp[vnum];
+  memcpy(tmp, v, sizeof(Vec2f) * vnum);
+  for(int i = 0; i < vnum - 2; i += 3)
+    {
+      draw_triangle(tmp + i);
+      tmp[i + 1] = tmp[0];
     }
 }
 
@@ -466,20 +662,17 @@ void render()
     // output return dst_n, Vec2f * dst_n
     //int hodge(Vec2f* v, float* clips, Vec2f* dst)
     Vec2f result[30];
-    Vec2f input[3] = {
+    Vec2f input[] = {
       Vec2f(200.f, 200.f),  Vec2f(200.f, 400.f), Vec2f(300.f, 340.f),
-      //c2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
-      //Vec2f(0.f, 0.f),  Vec2f(200.f, 200.f), Vec2f(30.f, 60.f),
+      Vec2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
+      Vec2f(0.f, 0.f),  Vec2f(200.f, 200.f), Vec2f(30.f, 60.f),
     };
-    draw_poly_raw(blue, input, 3);
+    draw_poly_raw(blue, input + 3, 3);
     float xxxx;
-    int num = hodge(input, &xxxx, result);
+    int num = hodge(input + 3, &xxxx, result);
     draw_poly_raw(red, result, num);
 
-    // int triangle_setup(const Vec2f* v, TriEdgePair* dst)
-    TriEdgePair dst[30];
-    triangle_setup(result, dst);
-
+    draw_triangle(input + 3);
 
     sdlerror();
     SDL_UnlockSurface( gScreenSurface );// ロックを解除
