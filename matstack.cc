@@ -200,7 +200,6 @@ void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb)
     }
   return;
 }
-// TODO:
 void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
 {
   double* dst = (double*)pdst;
@@ -208,18 +207,10 @@ void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   const double* b = (double*)pb;
   for(int i = 0; i < 4; ++i)
     {
-      int k = 4 * i;
-#if 0
-      dst[ 0 + i] = a[ 0] * b[k + 0] + a[ 1] * b[k + 1] + a[ 2] * b[k + 2] + a[ 3] * b[k + 3];
-      dst[ 4 + i] = a[ 4] * b[k + 0] + a[ 5] * b[k + 1] + a[ 6] * b[k + 2] + a[ 7] * b[k + 3];
-      dst[ 8 + i] = a[ 8] * b[k + 0] + a[ 9] * b[k + 1] + a[10] * b[k + 2] + a[11] * b[k + 3];
-      dst[12 + i] = a[12] * b[k + 0] + a[13] * b[k + 1] + a[14] * b[k + 2] + a[15] * b[k + 3];
-#else
       dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 4] + a[ 2] * b[i + 8] + a[ 3] * b[i + 12];
       dst[ 4 + i] = a[ 4] * b[i + 0] + a[ 5] * b[i + 4] + a[ 6] * b[i + 8] + a[ 7] * b[i + 12];
       dst[ 8 + i] = a[ 8] * b[i + 0] + a[ 9] * b[i + 4] + a[10] * b[i + 8] + a[11] * b[i + 12];
       dst[12 + i] = a[12] * b[i + 0] + a[13] * b[i + 4] + a[14] * b[i + 8] + a[15] * b[i + 12];
-#endif // 0
     }
   return;
 }
@@ -581,5 +572,196 @@ void randmat(mat44d* pa)
     {
       a[i] = 1.0 * rand() / RAND_MAX;
     }
+}
+
+// p104
+// (left, bottom, -near):ニアクリップの左下
+// (right, top, -near):ニアクリップの右上の座標を示す
+void frustum(mat44d* pdst, double left, double right, double bottom, double top, double near, double far)
+{
+  double* dst = (double*)pdst;
+
+  dst[0] = 2.*near / (right - left);
+  dst[1] = 0.;
+  dst[2] = (right + left) / (right - left);
+  dst[3] = 0.;
+
+  dst[4] = 0.;
+  dst[5] = 2.*near / (top - bottom);
+  dst[6] = (top + bottom) / (top - bottom);
+  dst[7] = 0.;
+
+  dst[8] = 0.;
+  dst[9] = 0.;
+  dst[10] = -(far + near) / (far - near);
+  dst[11] = 2.*near / (far - near);
+
+  dst[12] = 0.;
+  dst[13] = 0.;
+  dst[14] = -1.;
+  dst[15] = 0.;
+
+}
+
+void frustum(double left, double right, double bottom, double top, double near, double far)
+{
+  switch(cur_matmode)
+    {
+    case MATMODE_WORLD:
+      frustum(&stack_world[cur_world], left, right, bottom, top, near, far);
+      break;
+    case MATMODE_VIEW:
+      frustum(&stack_view[cur_view], left, right, bottom, top, near, far);
+      break;
+    case MATMODE_PROJ:
+      frustum(&stack_proj[cur_proj], left, right, bottom, top, near, far);
+      break;
+    }
+}
+
+// OpenGL プログラミングガイド5版,p727
+void ortho(mat44d* pdst, double left, double right, double bottom, double top, double near, double far)
+{
+  double* dst = (double*)pdst;
+  dst[0] = 2.*near / (right - left);
+  dst[1] = 0.;
+  dst[2] = 0.;
+  dst[3] = (right + left) / (right - left);
+
+  dst[4] = 0.;
+  dst[5] = 2.*near / (top - bottom);
+  dst[6] = 0.;
+  dst[7] = -(top + bottom) / (top - bottom);
+
+  dst[8] = 0.;
+  dst[9] = 0.;
+  dst[10] = -2. / (far - near);
+  dst[11] = (far + near) / (far - near);
+
+  dst[12] = 0.;
+  dst[13] = 0.;
+  dst[14] = 0.;
+  dst[15] = 1.;
+}
+
+void ortho(double left, double right, double bottom, double top, double near, double far)
+{
+  switch(cur_matmode)
+    {
+    case MATMODE_WORLD:
+      ortho(&stack_world[cur_world], left, right, bottom, top, near, far);
+      break;
+    case MATMODE_VIEW:
+      ortho(&stack_view[cur_view], left, right, bottom, top, near, far);
+      break;
+    case MATMODE_PROJ:
+      ortho(&stack_proj[cur_proj], left, right, bottom, top, near, far);
+      break;
+    }
+}
+
+// TODO:
+// fovy [0.0 .. 180.0], aspect:w/h
+// near, far: 視点からの距離
+void perspective(mat44d* pdst, double fovy, double aspect, double near, double far)
+{
+  //  double* dst = (double*)pdst;
+
+}
+
+// world2viewとして使う。
+void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ)
+{
+  double* dst = (double*)pdst;
+  v3d dir = {centerX - eyeX, centerY - eyeY, centerZ - eyeZ};
+  normalize(&dir);
+  v3d c;
+  v3d u = {upX, upY, upZ};
+  cross(&c, &dir, &u);
+  cross(&u, &c, &dir);
+  normalize(&u);
+  normalize(&c);
+  
+  dst[0] = c[0];
+  dst[1] = c[1];
+  dst[2] = c[2];
+  dst[3] = 0.;
+
+  dst[4] = u[0];
+  dst[5] = u[1];
+  dst[6] = u[2];
+  dst[7] = 0.;
+
+  dst[8] = -dir[0];
+  dst[9] = -dir[1];
+  dst[10] = -dir[2];
+  dst[11] = 0.;
+
+  dst[12] = 0.;
+  dst[13] = 0.;
+  dst[14] = 0.;
+  dst[15] = 1.;
+}
+
+
+double abs(const v3d* pv)
+{
+  double* v = (double*)pv;
+  return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+}
+double abs2(const v3d* pv)
+{
+  double* v = (double*)pv;
+  return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+}
+void normalize(v3d* pdst, const v3d* pv)
+{
+  double* dst = (double*)pdst;
+  double* v = (double*)pv;
+  double tmp = abs(pv);
+  dst[0] = v[0] / tmp;
+  dst[1] = v[1] / tmp;
+  dst[2] = v[2] / tmp;
+}
+void normalize(v3d* pio)
+{
+  double* io = (double*)pio;
+  double tmp = abs(pio);
+  io[0] = io[0] / tmp;
+  io[1] = io[1] / tmp;
+  io[2] = io[2] / tmp;
+}
+void add(v3d* pdst, const v3d* pa, const v3d* pb)
+{
+  double* dst = (double*)pdst;
+  double* a = (double*)pa;
+  double* b = (double*)pb;
+  dst[0] = a[0] + b[0];
+  dst[1] = a[1] + b[1];
+  dst[2] = a[2] + b[2];
+}
+void sub(v3d* pdst, const v3d* pa, const v3d* pb)
+{
+  double* dst = (double*)pdst;
+  double* a = (double*)pa;
+  double* b = (double*)pb;
+  dst[0] = a[0] - b[0];
+  dst[1] = a[1] - b[1];
+  dst[2] = a[2] - b[2];
+}
+double dot(const v3d* pa, const v3d* pb)
+{
+  double* a = (double*)pa;
+  double* b = (double*)pb;
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+void cross(v3d* pdst, const v3d* pa, const v3d* pb)
+{
+  double* dst = (double*)pdst;
+  double* a = (double*)pa;
+  double* b = (double*)pb;
+  dst[0] = a[1] * b[2] - a[2] * b[1];
+  dst[1] = a[2] * b[0] - a[0] * b[2];
+  dst[2] = a[0] * b[1] - a[1] * b[0];
 }
 

@@ -110,5 +110,33 @@ EXTERN void randmat(mat33d* pa);
 EXTERN void randmat(mat44d* pa);
 
 
+// p104
+// (left, bottom, -near):ニアクリップの左下
+// (right, top, -near):ニアクリップの右上の座標を示す
+EXTERN void frustum(mat44d* pdst, double left, double right, double bottom, double top, double near, double far);
+EXTERN void frustum(double left, double right, double bottom, double top, double near, double far);
+
+// OpenGL プログラミングガイド5版,p727
+EXTERN void ortho(mat44d* pdst, double left, double right, double bottom, double top, double near, double far);
+EXTERN void ortho(double left, double right, double bottom, double top, double near, double far);
+
+// TODO:
+// fovy [0.0 .. 180.0], aspect:w/h
+// near, far: 視点からの距離
+//EXTERN void perspective(mat44d* pdst, double fovy, double aspect, double near, double far);
+
+// world2viewとして使う。
+EXTERN void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);
+
+typedef double v3d[3];
+EXTERN double abs(const v3d* pv);
+EXTERN double abs2(const v3d* pv);
+EXTERN void normalize(v3d* pdst, const v3d* pv);
+EXTERN void normalize(v3d* pio);
+EXTERN void add(v3d* pdst, const v3d* pa, const v3d* pb);
+EXTERN void sub(v3d* pdst, const v3d* pa, const v3d* pb);
+EXTERN double dot(const v3d* pa, const v3d* pb);
+EXTERN void cross(v3d* pdst, const v3d* pa, const v3d* pb);
+
 
 #endif // MATSTACK_INC_SEEN
