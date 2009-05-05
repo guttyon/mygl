@@ -1,7 +1,5 @@
 CXXFLAGS = -Wall -g
 
-OBJDIR=./obj
-
 OBJS = util.o
 OBJS += main.o
 OBJS += sdluser.o
@@ -10,9 +8,6 @@ OBJS += mygl.o
 DEPS = $(foreach O,$(OBJS),.$O.d)
 
 all: mygl
-
-m:
-	echo $(DEPS)
 
 mygl: $(OBJS)
 	g++ -g -lSDL $(OBJS) -o $@
@@ -26,6 +21,9 @@ mygl2: $(OBJS)
 	@echo "" >> .$@.d
 	@echo "cmd-$@ = g++ -c $(CXXFLAGS) $< -o $@" >> .$@.d
 	@make --no-print-directory -f Makefile.build $@
+#	内部では$(obj)で参照できる。
+#	ただし、そうすると、Makefile.buildの先頭でincludeし、.oをターゲットとしないといけなくなる。
+#	@make --no-print-directory -f Makefile.build obj=$@
 
 clean:
 	-rm mygl $(OBJS) $(DEPS)
