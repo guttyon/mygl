@@ -18,6 +18,10 @@ static int cur_view = 0;
 static mat44d stack_proj[30];
 static int cur_proj = 0;
 
+// texsture
+static mat44d stack_texsture[30];
+static int cur_texsture = 0;
+
 static mat22d ident22d = {
   1.0, 0.0,
   0.0, 1.0,
@@ -45,17 +49,20 @@ void matmode(E_MATMODE mode)
 void loadidentity()
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      memcpy(stack_world[cur_world], ident44d, sizeof(mat44d));
-      break;
-    case MATMODE_VIEW:
-      memcpy(stack_view[cur_view], ident44d, sizeof(mat44d));
-      break;
-    case MATMODE_PROJ:
-      memcpy(stack_proj[cur_proj], ident44d, sizeof(mat44d));
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    memcpy(stack_world[cur_world], ident44d, sizeof(mat44d));
+    break;
+  case MATMODE_VIEW:
+    memcpy(stack_view[cur_view], ident44d, sizeof(mat44d));
+    break;
+  case MATMODE_PROJ:
+    memcpy(stack_proj[cur_proj], ident44d, sizeof(mat44d));
+    break;
+  case MATMODE_TEXTURE:
+    memcpy(stack_texsture[cur_texsture], ident44d, sizeof(mat44d));
+    break;
+  }
 }
 void loadidentity(mat22d* m)
 {
@@ -72,74 +79,89 @@ void loadidentity(mat44d* m)
 void pushmat()
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      memcpy(stack_world[cur_world + 1], stack_world[cur_world], sizeof(mat44d));
-      ++cur_world;
-      assert(cur_world < 30);
-      break;
-    case MATMODE_VIEW:
-      memcpy(stack_view[cur_view + 1], stack_view[cur_view], sizeof(mat44d));
-      ++cur_view;
-      assert(cur_view < 30);
-      break;
-    case MATMODE_PROJ:
-      memcpy(stack_proj[cur_proj + 1], stack_proj[cur_proj], sizeof(mat44d));
-      ++cur_proj;
-      assert(cur_proj < 30);
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    memcpy(stack_world[cur_world + 1], stack_world[cur_world], sizeof(mat44d));
+    ++cur_world;
+    assert(cur_world < 30);
+    break;
+  case MATMODE_VIEW:
+    memcpy(stack_view[cur_view + 1], stack_view[cur_view], sizeof(mat44d));
+    ++cur_view;
+    assert(cur_view < 30);
+    break;
+  case MATMODE_PROJ:
+    memcpy(stack_proj[cur_proj + 1], stack_proj[cur_proj], sizeof(mat44d));
+    ++cur_proj;
+    assert(cur_proj < 30);
+    break;
+  case MATMODE_TEXTURE:
+    memcpy(stack_texsture[cur_texsture + 1], stack_texsture[cur_texsture], sizeof(mat44d));
+    ++cur_texsture;
+    assert(cur_texsture < 30);
+    break;
+  }
 }
 
 void popmat()
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      assert(cur_world > 0);
-      --cur_world;
-      break;
-    case MATMODE_VIEW:
-      assert(cur_view > 0);
-      --cur_view;
-      break;
-    case MATMODE_PROJ:
-      assert(cur_proj > 0);
-      --cur_proj;
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    assert(cur_world > 0);
+    --cur_world;
+    break;
+  case MATMODE_VIEW:
+    assert(cur_view > 0);
+    --cur_view;
+    break;
+  case MATMODE_PROJ:
+    assert(cur_proj > 0);
+    --cur_proj;
+    break;
+  case MATMODE_TEXTURE:
+    assert(cur_texsture > 0);
+    --cur_texsture;
+    break;
+  }
 }
 
 void setmat(const mat44d* mat)
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      memcpy(stack_world[cur_world], mat, sizeof(mat44d));
-      break;
-    case MATMODE_VIEW:
-      memcpy(stack_view[cur_view], mat, sizeof(mat44d));
-      break;
-    case MATMODE_PROJ:
-      memcpy(stack_proj[cur_proj], mat, sizeof(mat44d));
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    memcpy(stack_world[cur_world], mat, sizeof(mat44d));
+    break;
+  case MATMODE_VIEW:
+    memcpy(stack_view[cur_view], mat, sizeof(mat44d));
+    break;
+  case MATMODE_PROJ:
+    memcpy(stack_proj[cur_proj], mat, sizeof(mat44d));
+    break;
+  case MATMODE_TEXTURE:
+    memcpy(stack_texsture[cur_texsture], mat, sizeof(mat44d));
+    break;
+  }
 }
 
 void getmat(mat44d* mat)
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      memcpy(mat, stack_world[cur_world], sizeof(mat44d));
-      break;
-    case MATMODE_VIEW:
-      memcpy(mat, stack_view[cur_view], sizeof(mat44d));
-      break;
-    case MATMODE_PROJ:
-      memcpy(mat, stack_proj[cur_proj], sizeof(mat44d));
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    memcpy(mat, stack_world[cur_world], sizeof(mat44d));
+    break;
+  case MATMODE_VIEW:
+    memcpy(mat, stack_view[cur_view], sizeof(mat44d));
+    break;
+  case MATMODE_PROJ:
+    memcpy(mat, stack_proj[cur_proj], sizeof(mat44d));
+    break;
+  case MATMODE_TEXTURE:
+    memcpy(mat, stack_texsture[cur_texsture], sizeof(mat44d));
+    break;
+  }
 }
 
 void add_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
@@ -148,9 +170,9 @@ void add_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 9; ++i)
-    {
-      dst[i] = a[i] + b[i];
-    }
+  {
+    dst[i] = a[i] + b[i];
+  }
   return;
 }
 void add_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
@@ -159,9 +181,9 @@ void add_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 16; ++i)
-    {
-      dst[i] = a[i] + b[i];
-    }
+  {
+    dst[i] = a[i] + b[i];
+  }
   return;
 }
 void sub_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
@@ -170,9 +192,9 @@ void sub_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 9; ++i)
-    {
-      dst[i] = a[i] - b[i];
-    }
+  {
+    dst[i] = a[i] - b[i];
+  }
   return;
 }
 void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
@@ -181,9 +203,9 @@ void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 16; ++i)
-    {
-      dst[i] = a[i] - b[i];
-    }
+  {
+    dst[i] = a[i] - b[i];
+  }
   return;
 }
 
@@ -193,11 +215,11 @@ void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb)
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 3; ++i)
-    {
-      dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 3] + a[ 2] * b[i + 6];
-      dst[ 3 + i] = a[ 3] * b[i + 0] + a[ 4] * b[i + 3] + a[ 5] * b[i + 6];
-      dst[ 6 + i] = a[ 6] * b[i + 0] + a[ 7] * b[i + 3] + a[ 8] * b[i + 6];
-    }
+  {
+    dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 3] + a[ 2] * b[i + 6];
+    dst[ 3 + i] = a[ 3] * b[i + 0] + a[ 4] * b[i + 3] + a[ 5] * b[i + 6];
+    dst[ 6 + i] = a[ 6] * b[i + 0] + a[ 7] * b[i + 3] + a[ 8] * b[i + 6];
+  }
   return;
 }
 void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
@@ -206,12 +228,12 @@ void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 4; ++i)
-    {
-      dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 4] + a[ 2] * b[i + 8] + a[ 3] * b[i + 12];
-      dst[ 4 + i] = a[ 4] * b[i + 0] + a[ 5] * b[i + 4] + a[ 6] * b[i + 8] + a[ 7] * b[i + 12];
-      dst[ 8 + i] = a[ 8] * b[i + 0] + a[ 9] * b[i + 4] + a[10] * b[i + 8] + a[11] * b[i + 12];
-      dst[12 + i] = a[12] * b[i + 0] + a[13] * b[i + 4] + a[14] * b[i + 8] + a[15] * b[i + 12];
-    }
+  {
+    dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 4] + a[ 2] * b[i + 8] + a[ 3] * b[i + 12];
+    dst[ 4 + i] = a[ 4] * b[i + 0] + a[ 5] * b[i + 4] + a[ 6] * b[i + 8] + a[ 7] * b[i + 12];
+    dst[ 8 + i] = a[ 8] * b[i + 0] + a[ 9] * b[i + 4] + a[10] * b[i + 8] + a[11] * b[i + 12];
+    dst[12 + i] = a[12] * b[i + 0] + a[13] * b[i + 4] + a[14] * b[i + 8] + a[15] * b[i + 12];
+  }
   return;
 }
 
@@ -220,20 +242,24 @@ void mulmat(const mat44d* m)
 {
   mat44d tmp;
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      mmul(&tmp, &stack_world[cur_world], m);
-      memcpy(stack_world[cur_world], &tmp, sizeof(mat44d));
-      break;
-    case MATMODE_VIEW:
-      mmul(&tmp, &stack_view[cur_view], m);
-      memcpy(stack_view[cur_view], &tmp, sizeof(mat44d));
-      break;
-    case MATMODE_PROJ:
-      mmul(&tmp, &stack_proj[cur_proj], m);
-      memcpy(stack_proj[cur_proj], &tmp, sizeof(mat44d));
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    mmul(&tmp, &stack_world[cur_world], m);
+    memcpy(stack_world[cur_world], &tmp, sizeof(mat44d));
+    break;
+  case MATMODE_VIEW:
+    mmul(&tmp, &stack_view[cur_view], m);
+    memcpy(stack_view[cur_view], &tmp, sizeof(mat44d));
+    break;
+  case MATMODE_PROJ:
+    mmul(&tmp, &stack_proj[cur_proj], m);
+    memcpy(stack_proj[cur_proj], &tmp, sizeof(mat44d));
+    break;
+  case MATMODE_TEXTURE:
+    mmul(&tmp, &stack_texsture[cur_texsture], m);
+    memcpy(stack_texsture[cur_texsture], &tmp, sizeof(mat44d));
+    break;
+  }
 }
 
 // 転置
@@ -251,25 +277,25 @@ void transpose(mat33d* pdst, const mat33d* pa)
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   for(int i = 0; i < 3; ++i)
-    {
-      int k = 3 * i;
-      dst[ 0 + i] = a[ 0 + k];
-      dst[ 3 + i] = a[ 1 + k];
-      dst[ 6 + i] = a[ 2 + k];
-    }
+  {
+    int k = 3 * i;
+    dst[ 0 + i] = a[ 0 + k];
+    dst[ 3 + i] = a[ 1 + k];
+    dst[ 6 + i] = a[ 2 + k];
+  }
 }
 void transpose(mat44d* pdst, const mat44d* pa)
 {
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   for(int i = 0; i < 4; ++i)
-    {
-      int k = 4 * i;
-      dst[ 0 + i] = a[ 0 + k];
-      dst[ 4 + i] = a[ 1 + k];
-      dst[ 8 + i] = a[ 2 + k];
-      dst[12 + i] = a[ 3 + k];
-    }
+  {
+    int k = 4 * i;
+    dst[ 0 + i] = a[ 0 + k];
+    dst[ 4 + i] = a[ 1 + k];
+    dst[ 8 + i] = a[ 2 + k];
+    dst[12 + i] = a[ 3 + k];
+  }
 }
 // 余因子行列
 void cofactor(mat33d* pdst, const mat44d* pa, int i, int j)
@@ -278,22 +304,22 @@ void cofactor(mat33d* pdst, const mat44d* pa, int i, int j)
   const double* a = (double*)pa;
   int k = 0;
   while(k < 16)
+  {
+    if(
+       k != 4*i + 0 &&
+       k != 4*i + 1 &&
+       k != 4*i + 2 &&
+       k != 4*i + 3 &&
+       k != 4*0 + j &&
+       k != 4*1 + j &&
+       k != 4*2 + j &&
+       k != 4*3 + j
+    )
     {
-      if(
-	 k != 4*i + 0 &&
-	 k != 4*i + 1 &&
-	 k != 4*i + 2 &&
-	 k != 4*i + 3 &&
-	 k != 4*0 + j &&
-	 k != 4*1 + j &&
-	 k != 4*2 + j &&
-	 k != 4*3 + j
-	 )
-	{
-	  *dst++ = a[k];
-	}
-      ++k;
+      *dst++ = a[k];
     }
+    ++k;
+  }
 }
 
 // ゲームプログラミングのための3Dグラフィックス数学
@@ -320,19 +346,19 @@ double determinant(const mat44d* pa)
   mat33d tmp;
   const int j = 0; // 0 < j < 4であれば、なんでもよい。
   for(int i = 0; i < 4; ++i)
+  {
+    cofactor(&tmp, pa, i, j);
+    double det = determinant(&tmp);
+    double tmp2 = a[4*i+j] * det;
+    if((i+j)&1)
     {
-      cofactor(&tmp, pa, i, j);
-      double det = determinant(&tmp);
-      double tmp2 = a[4*i+j] * det;
-      if((i+j)&1)
-	{
-	  sum -= tmp2;
-	}
-      else
-	{
-	  sum += tmp2;
-	}
+      sum -= tmp2;
     }
+    else
+    {
+      sum += tmp2;
+    }
+  }
   return sum;
 }
 // p50
@@ -345,7 +371,6 @@ void inverse(mat22d* pdst, const mat22d* pa)
   dst[1] = -a[1] / det;
   dst[2] = -a[2] / det;
   dst[3] = a[0] / det;
-
 }
 void inverse(mat33d* pdst, const mat33d* pa)
 {
@@ -370,21 +395,21 @@ void inverse(mat44d* pdst, const mat44d* pa)
   mat33d tmp33;
   double det0 = determinant(pa);
   for(int i = 0; i < 4; ++i)
+  {
+    for(int j = 0; j < 4; ++j)
     {
-      for(int j = 0; j < 4; ++j)
-	{
-	  cofactor(&tmp33, pa, j, i);
-	  double det1 = determinant(&tmp33);
-	  if((i+j)&1)
-	    {
-	      dst[4*i + j] = -det1 / det0;
-	    }
-	  else
-	    {
-	      dst[4*i + j] = det1 / det0;
-	    }
-	}
-    }  
+      cofactor(&tmp33, pa, j, i);
+      double det1 = determinant(&tmp33);
+      if((i+j)&1)
+      {
+        dst[4*i + j] = -det1 / det0;
+      }
+      else
+      {
+        dst[4*i + j] = det1 / det0;
+      }
+    }
+  }  
 }
 // p63, p89
 // 一般の4x4ではなく、モデル変換（移動、拡大、回転）だけの4x4の変換。
@@ -503,75 +528,81 @@ void matprint(const mat22d& pa)
 {
   const double* a = (double*)&pa;
   for(int i = 0; i < 2; ++i)
-    {
-      int k = 2 * i;
-      printf("  [%d]:  %f, %f\n", i, a[k + 0], a[k + 1]);
-    }
+  {
+    int k = 2 * i;
+    printf("  [%d]:  %f, %f\n", i, a[k + 0], a[k + 1]);
+  }
 }
 void matprint(const mat33d& pa)
 {
   const double* a = (double*)&pa;
   for(int i = 0; i < 3; ++i)
-    {
-      int k = 3 * i;
-      printf("  [%d]:  %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2]);
-    }
+  {
+    int k = 3 * i;
+    printf("  [%d]:  %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2]);
+  }
 }
 void matprint(const mat44d& pa)
 {
   const double* a = (double*)&pa;
   for(int i = 0; i < 4; ++i)
-    {
-      int k = 4 * i;
-      printf("  [%d]:  %f, %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2], a[k + 3]);
-    }
+  {
+    int k = 4 * i;
+    printf("  [%d]:  %f, %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2], a[k + 3]);
+  }
 }
 void matprint(E_MATMODE mode)
 {
   switch(mode)
-    {
-    case MATMODE_WORLD:
-      matprint(stack_world[cur_world]);
-      break;
-    case MATMODE_VIEW:
-      matprint(stack_view[cur_view]);
-      break;
-    case MATMODE_PROJ:
-      matprint(stack_proj[cur_proj]);
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    matprint(stack_world[cur_world]);
+    break;
+  case MATMODE_VIEW:
+    matprint(stack_view[cur_view]);
+    break;
+  case MATMODE_PROJ:
+    matprint(stack_proj[cur_proj]);
+    break;
+  case MATMODE_TEXTURE:
+    matprint(stack_texsture[cur_texsture]);
+    break;
+  }
 }
 void matprint()
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      matprint(stack_world[cur_world]);
-      break;
-    case MATMODE_VIEW:
-      matprint(stack_view[cur_view]);
-      break;
-    case MATMODE_PROJ:
-      matprint(stack_proj[cur_proj]);
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    matprint(stack_world[cur_world]);
+    break;
+  case MATMODE_VIEW:
+    matprint(stack_view[cur_view]);
+    break;
+  case MATMODE_PROJ:
+    matprint(stack_proj[cur_proj]);
+    break;
+  case MATMODE_TEXTURE:
+    matprint(stack_texsture[cur_texsture]);
+    break;
+  }
 }
 
 void randmat(mat33d* pa)
 {
   double* a = (double*)pa;
   for(int i = 0; i < 9; ++i)
-    {
-      a[i] = 1.0 * rand() / RAND_MAX;
-    }
+  {
+    a[i] = 1.0 * rand() / RAND_MAX;
+  }
 }
 void randmat(mat44d* pa)
 {
   double* a = (double*)pa;
   for(int i = 0; i < 16; ++i)
-    {
-      a[i] = 1.0 * rand() / RAND_MAX;
-    }
+  {
+    a[i] = 1.0 * rand() / RAND_MAX;
+  }
 }
 
 // p104
@@ -606,17 +637,20 @@ void frustum(mat44d* pdst, double left, double right, double bottom, double top,
 void frustum(double left, double right, double bottom, double top, double near, double far)
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      frustum(&stack_world[cur_world], left, right, bottom, top, near, far);
-      break;
-    case MATMODE_VIEW:
-      frustum(&stack_view[cur_view], left, right, bottom, top, near, far);
-      break;
-    case MATMODE_PROJ:
-      frustum(&stack_proj[cur_proj], left, right, bottom, top, near, far);
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    frustum(&stack_world[cur_world], left, right, bottom, top, near, far);
+    break;
+  case MATMODE_VIEW:
+    frustum(&stack_view[cur_view], left, right, bottom, top, near, far);
+    break;
+  case MATMODE_PROJ:
+    frustum(&stack_proj[cur_proj], left, right, bottom, top, near, far);
+    break;
+  case MATMODE_TEXTURE:
+    frustum(&stack_texsture[cur_texsture], left, right, bottom, top, near, far);
+    break;
+  }
 }
 
 // OpenGL プログラミングガイド5版,p727
@@ -647,17 +681,20 @@ void ortho(mat44d* pdst, double left, double right, double bottom, double top, d
 void ortho(double left, double right, double bottom, double top, double near, double far)
 {
   switch(cur_matmode)
-    {
-    case MATMODE_WORLD:
-      ortho(&stack_world[cur_world], left, right, bottom, top, near, far);
-      break;
-    case MATMODE_VIEW:
-      ortho(&stack_view[cur_view], left, right, bottom, top, near, far);
-      break;
-    case MATMODE_PROJ:
-      ortho(&stack_proj[cur_proj], left, right, bottom, top, near, far);
-      break;
-    }
+  {
+  case MATMODE_WORLD:
+    ortho(&stack_world[cur_world], left, right, bottom, top, near, far);
+    break;
+  case MATMODE_VIEW:
+    ortho(&stack_view[cur_view], left, right, bottom, top, near, far);
+    break;
+  case MATMODE_PROJ:
+    ortho(&stack_proj[cur_proj], left, right, bottom, top, near, far);
+    break;
+  case MATMODE_TEXTURE:
+    ortho(&stack_texsture[cur_texsture], left, right, bottom, top, near, far);
+    break;
+  }
 }
 
 // TODO:

@@ -14,9 +14,9 @@ void debprintf(const char* format, ...)
   va_list ap;
   va_start(ap, format);
   if(debprint)
-    {
-      vprintf(format, ap);
-    }
+  {
+    vprintf(format, ap);
+  }
   va_end(ap);
   return;
 }

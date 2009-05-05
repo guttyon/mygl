@@ -28,7 +28,8 @@ enum E_MATMODE
   {
     MATMODE_WORLD,
     MATMODE_VIEW,
-    MATMODE_PROJ
+    MATMODE_PROJ,
+    MATMODE_TEXTURE
   };
 
 EXTERN void matmode(E_MATMODE mode);
