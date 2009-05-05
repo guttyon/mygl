@@ -1,5 +1,7 @@
 #ifndef VEC_H_INC_SEEN
 
+#include <math.h>
+
 struct Vec2i
 {
     int x;
@@ -26,9 +28,9 @@ struct Vec2f
   void normalize(){float abs = norm(); x /= abs; y /= abs;}
   float dot(const Vec2f& rhs){return x * rhs.x + y * rhs.y;}
 };
-Vec2f operator+(Vec2f lhs, const Vec2f& rhs){return lhs += rhs;}
-Vec2f operator-(Vec2f lhs, const Vec2f& rhs){return lhs -= rhs;}
-Vec2f operator*(float lhs, Vec2f rhs){return rhs *= lhs;}
+inline Vec2f operator+(Vec2f lhs, const Vec2f& rhs){return lhs += rhs;}
+inline Vec2f operator-(Vec2f lhs, const Vec2f& rhs){return lhs -= rhs;}
+inline Vec2f operator*(float lhs, Vec2f rhs){return rhs *= lhs;}
 
 
 struct Vec3f
@@ -40,8 +42,8 @@ struct Vec3f
     Vec3f& operator+=(const Vec3f& rhs){x += rhs.x; y += rhs.y; z += rhs.z; return *this;};
     Vec3f& operator-=(const Vec3f& rhs){x -= rhs.x; y -= rhs.y; z -= rhs.z; return *this;};
 };
-Vec3f operator+(Vec3f lhs, const Vec3f& rhs){return lhs += rhs;}
-Vec3f operator-(Vec3f lhs, const Vec3f& rhs){return lhs -= rhs;}
+inline Vec3f operator+(Vec3f lhs, const Vec3f& rhs){return lhs += rhs;}
+inline Vec3f operator-(Vec3f lhs, const Vec3f& rhs){return lhs -= rhs;}
 
 struct Vec4f
 {

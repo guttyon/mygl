@@ -4,6 +4,10 @@ OBJS = util.o
 OBJS += main.o
 OBJS += sdluser.o
 OBJS += mygl.o
+OBJS += drawline.o
+OBJS += intersect.o
+OBJS += hodge.o
+OBJS += mat.o
 
 DEPS = $(foreach O,$(OBJS),.$O.d)
 
