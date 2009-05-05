@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
 #include "basetype.h"
@@ -186,22 +187,21 @@ void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   return;
 }
 
-
-void mul_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
+void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb)
 {
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   const double* b = (double*)pb;
   for(int i = 0; i < 3; ++i)
     {
-      int k = 3 * i;
-      dst[ 0 + i] = a[ 0] * b[k + 0] + a[ 1] * b[k + 1] + a[ 2] * b[k + 2];
-      dst[ 3 + i] = a[ 3] * b[k + 0] + a[ 4] * b[k + 1] + a[ 5] * b[k + 2];
-      dst[ 6 + i] = a[ 6] * b[k + 0] + a[ 7] * b[k + 1] + a[ 8] * b[k + 2];
+      dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 3] + a[ 2] * b[i + 6];
+      dst[ 3 + i] = a[ 3] * b[i + 0] + a[ 4] * b[i + 3] + a[ 5] * b[i + 6];
+      dst[ 6 + i] = a[ 6] * b[i + 0] + a[ 7] * b[i + 3] + a[ 8] * b[i + 6];
     }
   return;
 }
-void mul_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
+// TODO:
+void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
 {
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
@@ -209,10 +209,17 @@ void mul_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   for(int i = 0; i < 4; ++i)
     {
       int k = 4 * i;
+#if 0
       dst[ 0 + i] = a[ 0] * b[k + 0] + a[ 1] * b[k + 1] + a[ 2] * b[k + 2] + a[ 3] * b[k + 3];
       dst[ 4 + i] = a[ 4] * b[k + 0] + a[ 5] * b[k + 1] + a[ 6] * b[k + 2] + a[ 7] * b[k + 3];
       dst[ 8 + i] = a[ 8] * b[k + 0] + a[ 9] * b[k + 1] + a[10] * b[k + 2] + a[11] * b[k + 3];
       dst[12 + i] = a[12] * b[k + 0] + a[13] * b[k + 1] + a[14] * b[k + 2] + a[15] * b[k + 3];
+#else
+      dst[ 0 + i] = a[ 0] * b[i + 0] + a[ 1] * b[i + 4] + a[ 2] * b[i + 8] + a[ 3] * b[i + 12];
+      dst[ 4 + i] = a[ 4] * b[i + 0] + a[ 5] * b[i + 4] + a[ 6] * b[i + 8] + a[ 7] * b[i + 12];
+      dst[ 8 + i] = a[ 8] * b[i + 0] + a[ 9] * b[i + 4] + a[10] * b[i + 8] + a[11] * b[i + 12];
+      dst[12 + i] = a[12] * b[i + 0] + a[13] * b[i + 4] + a[14] * b[i + 8] + a[15] * b[i + 12];
+#endif // 0
     }
   return;
 }
@@ -224,15 +231,15 @@ void mulmat(const mat44d* m)
   switch(cur_matmode)
     {
     case MATMODE_WORLD:
-      mul_m44_m44(&tmp, &stack_world[cur_world], m);
+      mmul(&tmp, &stack_world[cur_world], m);
       memcpy(stack_world[cur_world], &tmp, sizeof(mat44d));
       break;
     case MATMODE_VIEW:
-      mul_m44_m44(&tmp, &stack_view[cur_view], m);
+      mmul(&tmp, &stack_view[cur_view], m);
       memcpy(stack_view[cur_view], &tmp, sizeof(mat44d));
       break;
     case MATMODE_PROJ:
-      mul_m44_m44(&tmp, &stack_proj[cur_proj], m);
+      mmul(&tmp, &stack_proj[cur_proj], m);
       memcpy(stack_proj[cur_proj], &tmp, sizeof(mat44d));
       break;
     }
@@ -323,17 +330,17 @@ double determinant(const mat44d* pa)
   const int j = 0; // 0 < j < 4であれば、なんでもよい。
   for(int i = 0; i < 4; ++i)
     {
-	  cofactor(&tmp, pa, i, j);
-	  double det = determinant(&tmp);
-	  double tmp2 = a[4*i+j] * det;
-	  if((i+j)&1)
-	    {
-	      sum -= tmp2;
-	    }
-	  else
-	    {
-	      sum += tmp2;
-	    }
+      cofactor(&tmp, pa, i, j);
+      double det = determinant(&tmp);
+      double tmp2 = a[4*i+j] * det;
+      if((i+j)&1)
+	{
+	  sum -= tmp2;
+	}
+      else
+	{
+	  sum += tmp2;
+	}
     }
   return sum;
 }
@@ -371,12 +378,11 @@ void inverse(mat44d* pdst, const mat44d* pa)
   double* dst = (double*)pdst;
   mat33d tmp33;
   double det0 = determinant(pa);
-  printf("44:%f\n", det0);
   for(int i = 0; i < 4; ++i)
     {
       for(int j = 0; j < 4; ++j)
 	{
-	  cofactor(&tmp33, pa, i, j);
+	  cofactor(&tmp33, pa, j, i);
 	  double det1 = determinant(&tmp33);
 	  if((i+j)&1)
 	    {
@@ -560,5 +566,20 @@ void matprint()
     }
 }
 
-
+void randmat(mat33d* pa)
+{
+  double* a = (double*)pa;
+  for(int i = 0; i < 9; ++i)
+    {
+      a[i] = 1.0 * rand() / RAND_MAX;
+    }
+}
+void randmat(mat44d* pa)
+{
+  double* a = (double*)pa;
+  for(int i = 0; i < 16; ++i)
+    {
+      a[i] = 1.0 * rand() / RAND_MAX;
+    }
+}
 

@@ -378,13 +378,22 @@ void render()
       mat44d m, invm;
       getmat(&m);
       inverse(&invm, &m);
-      matprint(invm);
+      //matprint(invm);
     }
     {
-      mat33d m, invm;
-      loadidentity(&m);
+      mat44d invm, m2;
+      //randmat(&m);
+      mat44d m={
+	1., 2., 3., 1.,
+	4., 5., 6., 21.,
+	3., 2., 7., 1.,
+	13., 12., 17., 1.,
+      };
+      //matprint(m);
       inverse(&invm, &m);
       //matprint(invm);
+      mmul(&m2, &invm, &m);
+      matprint(m2);
     }
 }
 

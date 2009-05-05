@@ -49,9 +49,9 @@ EXTERN void sub_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb);
 EXTERN void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 
 
-EXTERN void mul_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb);
+EXTERN void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb);
 
-EXTERN void mul_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
+EXTERN void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 
 // 右にかけていく。
 EXTERN void mulmat(const mat44d* m);
@@ -106,6 +106,8 @@ EXTERN void matprint(const mat44d& pa);
 EXTERN void matprint(E_MATMODE mode);
 EXTERN void matprint();
 
+EXTERN void randmat(mat33d* pa);
+EXTERN void randmat(mat44d* pa);
 
 
 
