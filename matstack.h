@@ -38,6 +38,10 @@ EXTERN void popmat();
 EXTERN void setmat(const mat44d* mat);
 EXTERN void getmat(mat44d* mat);
 
+EXTERN void loadidentity(mat22d* m);
+EXTERN void loadidentity(mat33d* m);
+EXTERN void loadidentity(mat44d* m);
+
 
 EXTERN void add_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb);
 EXTERN void add_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
@@ -52,6 +56,7 @@ EXTERN void mul_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 // 右にかけていく。
 EXTERN void mulmat(const mat44d* m);
 
+EXTERN void transpose(mat22d* pdst, const mat22d* pa);
 EXTERN void transpose(mat33d* pdst, const mat33d* pa);
 EXTERN void transpose(mat44d* pdst, const mat44d* pa);
 // 余因子行列
@@ -95,6 +100,7 @@ EXTERN void rotate(float x, float y, float z, float theta);
 
 
 
+EXTERN void matprint(const mat22d& pa);
 EXTERN void matprint(const mat33d& pa);
 EXTERN void matprint(const mat44d& pa);
 EXTERN void matprint(E_MATMODE mode);

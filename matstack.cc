@@ -17,7 +17,16 @@ static int cur_view = 0;
 static mat44d stack_proj[30];
 static int cur_proj = 0;
 
-static mat44d ident = {
+static mat22d ident22d = {
+  1.0, 0.0,
+  0.0, 1.0,
+};
+static mat33d ident33d = {
+  1.0, 0.0, 0.0,
+  0.0, 1.0, 0.0,
+  0.0, 0.0, 1.0,
+};
+static mat44d ident44d = {
   1.0, 0.0, 0.0, 0.0,
   0.0, 1.0, 0.0, 0.0,
   0.0, 0.0, 1.0, 0.0,
@@ -37,17 +46,28 @@ void loadidentity()
   switch(cur_matmode)
     {
     case MATMODE_WORLD:
-      memcpy(stack_world[cur_world], ident, sizeof(mat44d));
+      memcpy(stack_world[cur_world], ident44d, sizeof(mat44d));
       break;
     case MATMODE_VIEW:
-      memcpy(stack_view[cur_view], ident, sizeof(mat44d));
+      memcpy(stack_view[cur_view], ident44d, sizeof(mat44d));
       break;
     case MATMODE_PROJ:
-      memcpy(stack_proj[cur_proj], ident, sizeof(mat44d));
+      memcpy(stack_proj[cur_proj], ident44d, sizeof(mat44d));
       break;
     }
 }
-
+void loadidentity(mat22d* m)
+{
+  memcpy(m, ident22d, sizeof(mat22d));
+}
+void loadidentity(mat33d* m)
+{
+  memcpy(m, ident33d, sizeof(mat33d));
+}
+void loadidentity(mat44d* m)
+{
+  memcpy(m, ident44d, sizeof(mat44d));
+}
 void pushmat()
 {
   switch(cur_matmode)
@@ -219,6 +239,15 @@ void mulmat(const mat44d* m)
 }
 
 // 転置
+void transpose(mat22d* pdst, const mat22d* pa)
+{
+  double* dst = (double*)pdst;
+  const double* a = (double*)pa;
+  dst[0] = a[0];
+  dst[1] = a[2];
+  dst[2] = a[1];
+  dst[3] = a[3];
+}
 void transpose(mat33d* pdst, const mat33d* pa)
 {
   double* dst = (double*)pdst;
@@ -291,10 +320,9 @@ double determinant(const mat44d* pa)
   double* a = (double*)pa;
   double sum = 0.;
   mat33d tmp;
+  const int j = 0; // 0 < j < 4であれば、なんでもよい。
   for(int i = 0; i < 4; ++i)
     {
-      for(int j = 0; j < 4; ++j)
-	{
 	  cofactor(&tmp, pa, i, j);
 	  double det = determinant(&tmp);
 	  double tmp2 = a[4*i+j] * det;
@@ -306,7 +334,6 @@ double determinant(const mat44d* pa)
 	    {
 	      sum += tmp2;
 	    }
-	}
     }
   return sum;
 }
@@ -327,23 +354,24 @@ void inverse(mat33d* pdst, const mat33d* pa)
   double det = determinant(pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
-  dst[0] = (a[4* 1 + 1] * a[4* 2 + 2] - a[4* 1 + 2] * a[4* 2 + 1]) / det;
-  dst[1] = (a[4* 0 + 2] * a[4* 2 + 1] - a[4* 0 + 1] * a[4* 2 + 2]) / det;
-  dst[2] = (a[4* 0 + 1] * a[4* 1 + 2] - a[4* 0 + 2] * a[4* 1 + 1]) / det;
+  dst[0] = (a[3* 1 + 1] * a[3* 2 + 2] - a[3* 1 + 2] * a[3* 2 + 1]) / det;
+  dst[1] = (a[3* 0 + 2] * a[3* 2 + 1] - a[3* 0 + 1] * a[3* 2 + 2]) / det;
+  dst[2] = (a[3* 0 + 1] * a[3* 1 + 2] - a[3* 0 + 2] * a[3* 1 + 1]) / det;
 
-  dst[4] = (a[4* 1 + 2] * a[4* 2 + 0] - a[4* 1 + 0] * a[4* 2 + 2]) / det;
-  dst[5] = (a[4* 0 + 0] * a[4* 2 + 2] - a[4* 0 + 2] * a[4* 2 + 0]) / det;
-  dst[6] = (a[4* 0 + 2] * a[4* 1 + 0] - a[4* 0 + 0] * a[4* 1 + 2]) / det;
+  dst[3] = (a[3* 1 + 2] * a[3* 2 + 0] - a[3* 1 + 0] * a[3* 2 + 2]) / det;
+  dst[4] = (a[3* 0 + 0] * a[3* 2 + 2] - a[3* 0 + 2] * a[3* 2 + 0]) / det;
+  dst[5] = (a[3* 0 + 2] * a[3* 1 + 0] - a[3* 0 + 0] * a[3* 1 + 2]) / det;
 
-  dst[7] = (a[4* 1 + 0] * a[4* 2 + 1] - a[4* 1 + 1] * a[4* 2 + 0]) / det;
-  dst[8] = (a[4* 0 + 1] * a[4* 2 + 0] - a[4* 0 + 0] * a[4* 2 + 1]) / det;
-  dst[9] = (a[4* 0 + 0] * a[4* 1 + 1] - a[4* 0 + 1] * a[4* 1 + 0]) / det;
+  dst[6] = (a[3* 1 + 0] * a[3* 2 + 1] - a[3* 1 + 1] * a[3* 2 + 0]) / det;
+  dst[7] = (a[3* 0 + 1] * a[3* 2 + 0] - a[3* 0 + 0] * a[3* 2 + 1]) / det;
+  dst[8] = (a[3* 0 + 0] * a[3* 1 + 1] - a[3* 0 + 1] * a[3* 1 + 0]) / det;
 }
 void inverse(mat44d* pdst, const mat44d* pa)
 {
   double* dst = (double*)pdst;
   mat33d tmp33;
   double det0 = determinant(pa);
+  printf("44:%f\n", det0);
   for(int i = 0; i < 4; ++i)
     {
       for(int j = 0; j < 4; ++j)
@@ -474,6 +502,15 @@ void rotate(float x, float y, float z, float theta)
 // p77
 // TODO:
 
+void matprint(const mat22d& pa)
+{
+  const double* a = (double*)&pa;
+  for(int i = 0; i < 2; ++i)
+    {
+      int k = 2 * i;
+      printf("  [%d]:  %f, %f\n", i, a[k + 0], a[k + 1]);
+    }
+}
 void matprint(const mat33d& pa)
 {
   const double* a = (double*)&pa;

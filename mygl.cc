@@ -380,6 +380,12 @@ void render()
       inverse(&invm, &m);
       matprint(invm);
     }
+    {
+      mat33d m, invm;
+      loadidentity(&m);
+      inverse(&invm, &m);
+      //matprint(invm);
+    }
 }
 
 
