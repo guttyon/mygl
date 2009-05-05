@@ -1,4 +1,3 @@
-CXXFLAGS = -Wall -g
 
 OBJS = util.o
 OBJS += main.o
@@ -9,16 +8,26 @@ OBJS += intersect.o
 OBJS += hodge.o
 OBJS += mat.o
 
+LIBS = -lSDL
+
+CXXFLAGS = -Wall -g
+LDFLAGS = -Wall -g $(LIBS)
+
+ifeq ($(MAKECMDGOALS), prof)
+CXXFLAGS += -pg
+LDFLAGS += -pg
+endif
+
 DEPS = $(foreach O,$(OBJS),.$O.d)
 
 all: mygl
 
 mygl: $(OBJS)
-	g++ -g -lSDL $(OBJS) -o $@
+	g++ $(LDFLAGS) $(OBJS) -o $@
 
 # 比較用
 mygl2: $(OBJS)
-	g++ -g -lSDL $(OBJS) -o $@
+	g++ $(LDFLAGS) $(OBJS) -o $@
 
 %.o: %.cc
 	@g++ -M $< > .$@.d
@@ -34,6 +43,10 @@ clean:
 
 test: mygl
 	./$<
+
+prof: clean mygl
+	./mygl
+	gprof mygl
 
 gitpush:
 	@# ファイルはBOMの無い、UTF-8Nで保存すること。
