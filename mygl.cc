@@ -12,6 +12,7 @@
 #include "drawline.h"
 #include "intersect.h"
 #include "hodge.h"
+#include "matstack.h"
 
 
 
@@ -369,6 +370,16 @@ void render()
 
     sdlerror();
     SDL_UnlockSurface( gScreenSurface );// ロックを解除
+
+
+    {
+      loadidentity();
+      //matprint();
+      mat44d m, invm;
+      getmat(&m);
+      inverse(&invm, &m);
+      matprint(invm);
+    }
 }
 
 

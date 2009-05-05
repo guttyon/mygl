@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
@@ -217,6 +218,19 @@ void mulmat(const mat44d* m)
     }
 }
 
+// 転置
+void transpose(mat33d* pdst, const mat33d* pa)
+{
+  double* dst = (double*)pdst;
+  const double* a = (double*)pa;
+  for(int i = 0; i < 3; ++i)
+    {
+      int k = 3 * i;
+      dst[ 0 + i] = a[ 0 + k];
+      dst[ 3 + i] = a[ 1 + k];
+      dst[ 6 + i] = a[ 2 + k];
+    }
+}
 void transpose(mat44d* pdst, const mat44d* pa)
 {
   double* dst = (double*)pdst;
@@ -230,6 +244,30 @@ void transpose(mat44d* pdst, const mat44d* pa)
       dst[12 + i] = a[ 3 + k];
     }
 }
+// 余因子行列
+void cofactor(mat33d* pdst, const mat44d* pa, int i, int j)
+{
+  double* dst = (double*)pdst;
+  const double* a = (double*)pa;
+  int k = 0;
+  while(k < 16)
+    {
+      if(
+	 k != 4*i + 0 &&
+	 k != 4*i + 1 &&
+	 k != 4*i + 2 &&
+	 k != 4*i + 3 &&
+	 k != 4*0 + j &&
+	 k != 4*1 + j &&
+	 k != 4*2 + j &&
+	 k != 4*3 + j
+	 )
+	{
+	  *dst++ = a[k];
+	}
+      ++k;
+    }
+}
 
 // ゲームプログラミングのための3Dグラフィックス数学
 // p49
@@ -239,7 +277,6 @@ double determinant(const mat22d* pa)
   return a[0] * a[3] - a[1] * a[2];
 }
 
-// p49
 double determinant(const mat33d* pa)
 {
   double* a = (double*)pa;
@@ -247,6 +284,31 @@ double determinant(const mat33d* pa)
     a[0] * (a[4] * a[8] - a[5] * a[7]) 
     - a[1] * (a[3] * a[8] - a[5] * a[6])
     + a[2] * (a[3] * a[7] - a[4] * a[6]);
+}
+
+double determinant(const mat44d* pa)
+{
+  double* a = (double*)pa;
+  double sum = 0.;
+  mat33d tmp;
+  for(int i = 0; i < 4; ++i)
+    {
+      for(int j = 0; j < 4; ++j)
+	{
+	  cofactor(&tmp, pa, i, j);
+	  double det = determinant(&tmp);
+	  double tmp2 = a[4*i+j] * det;
+	  if((i+j)&1)
+	    {
+	      sum -= tmp2;
+	    }
+	  else
+	    {
+	      sum += tmp2;
+	    }
+	}
+    }
+  return sum;
 }
 // p50
 void inverse(mat22d* pdst, const mat22d* pa)
@@ -260,7 +322,6 @@ void inverse(mat22d* pdst, const mat22d* pa)
   dst[3] = a[0] / det;
 
 }
-// p50
 void inverse(mat33d* pdst, const mat33d* pa)
 {
   double det = determinant(pa);
@@ -277,6 +338,28 @@ void inverse(mat33d* pdst, const mat33d* pa)
   dst[7] = (a[4* 1 + 0] * a[4* 2 + 1] - a[4* 1 + 1] * a[4* 2 + 0]) / det;
   dst[8] = (a[4* 0 + 1] * a[4* 2 + 0] - a[4* 0 + 0] * a[4* 2 + 1]) / det;
   dst[9] = (a[4* 0 + 0] * a[4* 1 + 1] - a[4* 0 + 1] * a[4* 1 + 0]) / det;
+}
+void inverse(mat44d* pdst, const mat44d* pa)
+{
+  double* dst = (double*)pdst;
+  mat33d tmp33;
+  double det0 = determinant(pa);
+  for(int i = 0; i < 4; ++i)
+    {
+      for(int j = 0; j < 4; ++j)
+	{
+	  cofactor(&tmp33, pa, i, j);
+	  double det1 = determinant(&tmp33);
+	  if((i+j)&1)
+	    {
+	      dst[4*i + j] = -det1 / det0;
+	    }
+	  else
+	    {
+	      dst[4*i + j] = det1 / det0;
+	    }
+	}
+    }  
 }
 // p63, p89
 // 一般の4x4ではなく、モデル変換（移動、拡大、回転）だけの4x4の変換。
@@ -389,5 +472,56 @@ void rotate(float x, float y, float z, float theta)
 
 // quartenion
 // p77
+// TODO:
+
+void matprint(const mat33d& pa)
+{
+  const double* a = (double*)&pa;
+  for(int i = 0; i < 3; ++i)
+    {
+      int k = 3 * i;
+      printf("  [%d]:  %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2]);
+    }
+}
+void matprint(const mat44d& pa)
+{
+  const double* a = (double*)&pa;
+  for(int i = 0; i < 4; ++i)
+    {
+      int k = 4 * i;
+      printf("  [%d]:  %f, %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2], a[k + 3]);
+    }
+}
+void matprint(E_MATMODE mode)
+{
+  switch(mode)
+    {
+    case MATMODE_WORLD:
+      matprint(stack_world[cur_world]);
+      break;
+    case MATMODE_VIEW:
+      matprint(stack_view[cur_view]);
+      break;
+    case MATMODE_PROJ:
+      matprint(stack_proj[cur_proj]);
+      break;
+    }
+}
+void matprint()
+{
+  switch(cur_matmode)
+    {
+    case MATMODE_WORLD:
+      matprint(stack_world[cur_world]);
+      break;
+    case MATMODE_VIEW:
+      matprint(stack_view[cur_view]);
+      break;
+    case MATMODE_PROJ:
+      matprint(stack_proj[cur_proj]);
+      break;
+    }
+}
+
 
 

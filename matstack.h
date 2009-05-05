@@ -6,10 +6,24 @@
 #define MATSTACK_INC_SEEN
 
 // matstack
+#if 0
+struct mat22d
+{
+  double m[4];
+};
+struct mat33d
+{
+  double m[9];
+};
+struct mat44d
+{
+  double m[16];
+};
+#else
 typedef double mat22d[ 4];
 typedef double mat33d[ 9];
 typedef double mat44d[16];
-
+#endif // 0
 enum E_MATMODE
   {
     MATMODE_WORLD,
@@ -38,22 +52,22 @@ EXTERN void mul_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 // 右にかけていく。
 EXTERN void mulmat(const mat44d* m);
 
-
+EXTERN void transpose(mat33d* pdst, const mat33d* pa);
 EXTERN void transpose(mat44d* pdst, const mat44d* pa);
+// 余因子行列
+EXTERN void cofactor(mat33d* pdst, const mat44d* pa, int i, int j);
 
 
 // ゲームプログラミングのための3Dグラフィックス数学
 // p49
 EXTERN double determinant(const mat22d* pa);
-
-// p49
 EXTERN double determinant(const mat33d* pa);
+EXTERN double determinant(const mat44d* pa);
 
 // p50
 EXTERN void inverse(mat22d* pdst, const mat22d* pa);
-
-// p50
 EXTERN void inverse(mat33d* pdst, const mat33d* pa);
+EXTERN void inverse(mat44d* pdst, const mat44d* pa);
 
 // p63, p89
 // 一般の4x4ではなく、モデル変換（移動、拡大、回転）だけの4x4の変換。
@@ -81,6 +95,10 @@ EXTERN void rotate(float x, float y, float z, float theta);
 
 
 
+EXTERN void matprint(const mat33d& pa);
+EXTERN void matprint(const mat44d& pa);
+EXTERN void matprint(E_MATMODE mode);
+EXTERN void matprint();
 
 
 
