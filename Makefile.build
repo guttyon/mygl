@@ -1,0 +1,9 @@
+#INCTARGET = $(patsubst cmd-%,.%.d,$(MAKECMDGOALS))
+#include $(INCTARGET)
+
+include .$(MAKECMDGOALS).d
+
+%.o: %.cc 
+	@echo "$@"
+	@$(cmd-$(MAKECMDGOALS))
+
