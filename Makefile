@@ -7,6 +7,7 @@ OBJS += drawline.o
 OBJS += intersect.o
 OBJS += hodge.o
 OBJS += mat.o
+OBJS += matstack.o
 
 LIBS = -lSDL
 

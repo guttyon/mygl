@@ -117,6 +117,7 @@ void WhiteOut()
     SDL_UnlockSurface( gScreenSurface );// ロックを解除
 }
 
+
 // 塗りつぶす
 void FillScreen( SDL_Color Color )
 {
