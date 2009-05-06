@@ -343,8 +343,8 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
   v4f pos0[50];
   // 位置座標変換
   // 変換後の同次座標表現(x,y,z,w)の値の範囲は、
-  // wは[0 .. 1]になる。
-  // x,y,zは、[-w .. w]の範囲になるので、結局[-1 .. 1]の範囲になる。
+  // x,y,zは、[-w .. w]の範囲になるので、
+  // w除算後のゆーくりっど座標ではx,y,zは、[-1 .. 1]の範囲になる。
   // OpenGLプログラミングガイド, p724
   // （または、そうなるように透視変換行列がスケールされているようにも見える。
   // 同次座標でスケールさせても空間位置は変わらないので）
@@ -354,6 +354,7 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
     for(int i = 0; i < vnum; ++i)
     {
       mvmul(pos0 + i, &m, pos + i);
+      vecprint(pos0[i]);
     }
   }
 
@@ -443,18 +444,14 @@ void render()
     matmode(MATMODE_PROJ);
     loadidentity();
     perspective(100., 1., 1., 3.); // fovy, aspect, near, far
+    //    matprint(MATMODE_PROJ);exit(-1);
 
     // pespectiveにあわせたzにする。
     v4d pos[] = {
-      {0.0,   0.3, -2.0, 1.0},
+      {0.0,   0.0, -2.0, 1.0},
       {-0.2, -0.2, -2.0, 1.0},
       {0.2,  -0.2, -2.0, 1.0},
     };
-         //     X
-         //    / \
-         //   /   \
-         //  /     \
-         // --------\
     draw_primitive(PRIMITIVE_TRIANGLE_STRIP, pos, pos, pos, pos, 3);
   }
 

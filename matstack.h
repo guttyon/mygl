@@ -111,6 +111,10 @@ EXTERN void matprint(const mat44d& pa);
 EXTERN void matprint(E_MATMODE mode);
 EXTERN void matprint();
 
+EXTERN void vecprint(const v3d& pa);
+EXTERN void vecprint(const v4d& pa);
+
+
 EXTERN void randmat(mat33d* pa);
 EXTERN void randmat(mat44d* pa);
 
@@ -128,7 +132,8 @@ EXTERN void ortho(double left, double right, double bottom, double top, double n
 // TODO:
 // fovy [0.0 .. 180.0], aspect:w/h
 // near, far: 視点からの距離
-//EXTERN void perspective(mat44d* pdst, double fovy, double aspect, double near, double far);
+EXTERN void perspective(mat44d* pdst, double fovy, double aspect, double near, double far);
+EXTERN void perspective(double fovy, double aspect, double near, double far);
 
 // world2viewとして使う。
 EXTERN void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);

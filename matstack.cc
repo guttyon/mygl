@@ -589,6 +589,7 @@ void matprint(const mat44d& pa)
     printf("  [%d]:  %f, %f, %f, %f\n", i, a[k + 0], a[k + 1], a[k + 2], a[k + 3]);
   }
 }
+
 void matprint(E_MATMODE mode)
 {
   switch(mode)
@@ -625,6 +626,17 @@ void matprint()
     break;
   }
 }
+void vecprint(const v3d& pa)
+{
+  const double* a = (double*)&pa;
+  printf("v3d: {%f, %f, %f}\n", a[0], a[1], a[2]);
+}
+void vecprint(const v4d& pa)
+{
+  const double* a = (double*)&pa;
+  printf("v3d: {%f, %f, %f, %f}\n", a[0], a[1], a[2], a[3]);
+}
+
 
 void randmat(mat33d* pa)
 {
@@ -651,26 +663,25 @@ void frustum(mat44d* pdst, double left, double right, double bottom, double top,
 {
   double* dst = (double*)pdst;
 
-  dst[0] = 2.*near / (right - left);
-  dst[1] = 0.;
-  dst[2] = (right + left) / (right - left);
-  dst[3] = 0.;
+  dst[ 0] = 2. * near / (right - left);
+  dst[ 1] = 0.;
+  dst[ 2] = (right + left) / (right - left);
+  dst[ 3] = 0.;
 
-  dst[4] = 0.;
-  dst[5] = 2.*near / (top - bottom);
-  dst[6] = (top + bottom) / (top - bottom);
-  dst[7] = 0.;
+  dst[ 4] = 0.;
+  dst[ 5] = 2. * near / (top - bottom);
+  dst[ 6] = (top + bottom) / (top - bottom);
+  dst[ 7] = 0.;
 
-  dst[8] = 0.;
-  dst[9] = 0.;
+  dst[ 8] = 0.;
+  dst[ 9] = 0.;
   dst[10] = -(far + near) / (far - near);
-  dst[11] = 2.*near / (far - near);
+  dst[11] = -2. * far * near / (far - near);
 
   dst[12] = 0.;
   dst[13] = 0.;
   dst[14] = -1.;
   dst[15] = 0.;
-
 }
 
 void frustum(double left, double right, double bottom, double top, double near, double far)
@@ -696,18 +707,18 @@ void frustum(double left, double right, double bottom, double top, double near, 
 void ortho(mat44d* pdst, double left, double right, double bottom, double top, double near, double far)
 {
   double* dst = (double*)pdst;
-  dst[0] = 2.*near / (right - left);
-  dst[1] = 0.;
-  dst[2] = 0.;
-  dst[3] = (right + left) / (right - left);
+  dst[ 0] = 2. * near / (right - left);
+  dst[ 1] = 0.;
+  dst[ 2] = 0.;
+  dst[ 3] = (right + left) / (right - left);
 
-  dst[4] = 0.;
-  dst[5] = 2.*near / (top - bottom);
-  dst[6] = 0.;
-  dst[7] = -(top + bottom) / (top - bottom);
+  dst[ 4] = 0.;
+  dst[ 5] = 2. * near / (top - bottom);
+  dst[ 6] = 0.;
+  dst[ 7] = -(top + bottom) / (top - bottom);
 
-  dst[8] = 0.;
-  dst[9] = 0.;
+  dst[ 8] = 0.;
+  dst[ 9] = 0.;
   dst[10] = -2. / (far - near);
   dst[11] = (far + near) / (far - near);
 
@@ -740,7 +751,8 @@ void ortho(double left, double right, double bottom, double top, double near, do
 // near, far: 視点からの距離
 void perspective(mat44d* pdst, double fovy, double aspect, double near, double far)
 {
-  const double halfH = near * tan(fovy * 0.5);
+  const double theta = M_PI * fovy / 180.0;
+  const double halfH = near * tan(theta * 0.5);
   const double halfW = halfH * aspect; // aspect:w/h
   frustum(pdst, -halfW, halfW, -halfH, halfH, near, far);
 }
