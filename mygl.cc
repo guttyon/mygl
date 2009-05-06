@@ -432,6 +432,32 @@ void render()
 
   draw_triangle(input + 3);
 
+  {
+    matmode(MATMODE_WORLD);
+    loadidentity();
+    matmode(MATMODE_VIEW);
+    loadidentity();
+    lookat(0., 0., 0.,          // eye
+           0., 0., -1.,         // center
+           0., 1., 0.);         // up
+    matmode(MATMODE_PROJ);
+    loadidentity();
+    perspective(100., 1., 1., 3.); // fovy, aspect, near, far
+
+    // pespectiveにあわせたzにする。
+    v4d pos[] = {
+      {0.0,   0.3, -2.0, 1.0},
+      {-0.2, -0.2, -2.0, 1.0},
+      {0.2,  -0.2, -2.0, 1.0},
+    };
+         //     X
+         //    / \
+         //   /   \
+         //  /     \
+         // --------\
+    draw_primitive(PRIMITIVE_TRIANGLE_STRIP, pos, pos, pos, pos, 3);
+  }
+
   sdlerror();
   SDL_UnlockSurface( gScreenSurface );// ロックを解除
 

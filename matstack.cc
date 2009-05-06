@@ -400,38 +400,38 @@ double determinant(const mat44d* pa)
 void inverse(mat22d* pdst, const mat22d* pa)
 {
   assert(pdst != pa);
-  double det = determinant(pa);
+  double invdet = 1.0 / determinant(pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
-  dst[0] = a[3] / det;
-  dst[1] = -a[1] / det;
-  dst[2] = -a[2] / det;
-  dst[3] = a[0] / det;
+  dst[0] = a[3] * invdet;
+  dst[1] = -a[1] * invdet;
+  dst[2] = -a[2] * invdet;
+  dst[3] = a[0] * invdet;
 }
 void inverse(mat33d* pdst, const mat33d* pa)
 {
   assert(pdst != pa);
-  double det = determinant(pa);
+  double invdet = 1.0 / determinant(pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
-  dst[0] = (a[3* 1 + 1] * a[3* 2 + 2] - a[3* 1 + 2] * a[3* 2 + 1]) / det;
-  dst[1] = (a[3* 0 + 2] * a[3* 2 + 1] - a[3* 0 + 1] * a[3* 2 + 2]) / det;
-  dst[2] = (a[3* 0 + 1] * a[3* 1 + 2] - a[3* 0 + 2] * a[3* 1 + 1]) / det;
+  dst[0] = (a[3* 1 + 1] * a[3* 2 + 2] - a[3* 1 + 2] * a[3* 2 + 1]) * invdet;
+  dst[1] = (a[3* 0 + 2] * a[3* 2 + 1] - a[3* 0 + 1] * a[3* 2 + 2]) * invdet;
+  dst[2] = (a[3* 0 + 1] * a[3* 1 + 2] - a[3* 0 + 2] * a[3* 1 + 1]) * invdet;
 
-  dst[3] = (a[3* 1 + 2] * a[3* 2 + 0] - a[3* 1 + 0] * a[3* 2 + 2]) / det;
-  dst[4] = (a[3* 0 + 0] * a[3* 2 + 2] - a[3* 0 + 2] * a[3* 2 + 0]) / det;
-  dst[5] = (a[3* 0 + 2] * a[3* 1 + 0] - a[3* 0 + 0] * a[3* 1 + 2]) / det;
+  dst[3] = (a[3* 1 + 2] * a[3* 2 + 0] - a[3* 1 + 0] * a[3* 2 + 2]) * invdet;
+  dst[4] = (a[3* 0 + 0] * a[3* 2 + 2] - a[3* 0 + 2] * a[3* 2 + 0]) * invdet;
+  dst[5] = (a[3* 0 + 2] * a[3* 1 + 0] - a[3* 0 + 0] * a[3* 1 + 2]) * invdet;
 
-  dst[6] = (a[3* 1 + 0] * a[3* 2 + 1] - a[3* 1 + 1] * a[3* 2 + 0]) / det;
-  dst[7] = (a[3* 0 + 1] * a[3* 2 + 0] - a[3* 0 + 0] * a[3* 2 + 1]) / det;
-  dst[8] = (a[3* 0 + 0] * a[3* 1 + 1] - a[3* 0 + 1] * a[3* 1 + 0]) / det;
+  dst[6] = (a[3* 1 + 0] * a[3* 2 + 1] - a[3* 1 + 1] * a[3* 2 + 0]) * invdet;
+  dst[7] = (a[3* 0 + 1] * a[3* 2 + 0] - a[3* 0 + 0] * a[3* 2 + 1]) * invdet;
+  dst[8] = (a[3* 0 + 0] * a[3* 1 + 1] - a[3* 0 + 1] * a[3* 1 + 0]) * invdet;
 }
 void inverse(mat44d* pdst, const mat44d* pa)
 {
   assert(pdst != pa);
   double* dst = (double*)pdst;
   mat33d tmp33;
-  double det0 = determinant(pa);
+  double invdet0 = 1.0 / determinant(pa);
   for(int i = 0; i < 4; ++i)
   {
     for(int j = 0; j < 4; ++j)
@@ -440,11 +440,11 @@ void inverse(mat44d* pdst, const mat44d* pa)
       double det1 = determinant(&tmp33);
       if((i+j)&1)
       {
-        dst[4*i + j] = -det1 / det0;
+        dst[4*i + j] = -det1 * invdet0;
       }
       else
       {
-        dst[4*i + j] = det1 / det0;
+        dst[4*i + j] = det1 * invdet0;
       }
     }
   }  
@@ -766,7 +766,7 @@ void perspective(double fovy, double aspect, double near, double far)
 
 // world2viewとして使う。
 // OpenGLの神髄, p85
-void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ)
+void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ)
 {
   double* dst = (double*)pdst;
   v3d dir = {centerX - eyeX, centerY - eyeY, centerZ - eyeZ};
@@ -798,6 +798,24 @@ void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,
   dst[14] = 0.;
   dst[15] = 1.;
 }
+void lookat(double eyeX, double eyeY, double eyeZ, double centerX, double centerY, double centerZ, double upX, double upY, double upZ)
+{
+  switch(cur_matmode)
+  {
+  case MATMODE_WORLD:
+    lookat(&stack_world[cur_world], eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+    break;
+  case MATMODE_VIEW:
+    lookat(&stack_view[cur_view], eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+    break;
+  case MATMODE_PROJ:
+    lookat(&stack_proj[cur_proj], eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+    break;
+  case MATMODE_TEXTURE:
+    lookat(&stack_texsture[cur_texsture], eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+    break;
+  }
+}
 
 // TODO:
 // 出力画面の位置を設定する。
@@ -824,18 +842,18 @@ void normalize(v3d* pdst, const v3d* pv)
 {
   double* dst = (double*)pdst;
   double* v = (double*)pv;
-  double tmp = abs(pv);
-  dst[0] = v[0] / tmp;
-  dst[1] = v[1] / tmp;
-  dst[2] = v[2] / tmp;
+  double invtmp = 1.0 / abs(pv);
+  dst[0] = v[0] * invtmp;
+  dst[1] = v[1] * invtmp;
+  dst[2] = v[2] * invtmp;
 }
 void normalize(v3d* pio)
 {
   double* io = (double*)pio;
-  double tmp = abs(pio);
-  io[0] = io[0] / tmp;
-  io[1] = io[1] / tmp;
-  io[2] = io[2] / tmp;
+  double invtmp = 1.0 / abs(pio);
+  io[0] = io[0] * invtmp;
+  io[1] = io[1] * invtmp;
+  io[2] = io[2] * invtmp;
 }
 void add(v3d* pdst, const v3d* pa, const v3d* pb)
 {

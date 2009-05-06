@@ -132,6 +132,7 @@ EXTERN void ortho(double left, double right, double bottom, double top, double n
 
 // world2viewとして使う。
 EXTERN void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);
+EXTERN void lookat(double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);
 
 EXTERN double abs(const v3d* pv);
 EXTERN double abs2(const v3d* pv);
