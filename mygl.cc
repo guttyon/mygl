@@ -362,6 +362,9 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
   // texcood自動生成モードが有効なら、
   // texcood座標変換の前に、texcoodを自動生成しないといけない。
   // その後、さらにtexcood座標変換が行われる。
+  // 下の説明にあるEYE_PLANEは視点座標を使用するので、
+  // 上の位置座標変換から透視変換を削除し、
+  // texcood自動生成後に、改めて透視変換をする必要がある。
   // 
   // OpenGLプログラミングガイド, p411, 415
   // 自動生成モードは、３種類。OBJ_PLANE, EYE_PLANE, SPHERE_MAP
