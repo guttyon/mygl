@@ -38,6 +38,8 @@ EXTERN void pushmat();
 EXTERN void popmat();
 EXTERN void setmat(const mat44d* mat);
 EXTERN void getmat(mat44d* mat);
+EXTERN void getmodel2perspective(mat44d* m);
+
 
 EXTERN void loadidentity(mat22d* m);
 EXTERN void loadidentity(mat33d* m);
@@ -51,7 +53,6 @@ EXTERN void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 
 
 EXTERN void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb);
-
 EXTERN void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 
 // 右にかけていく。
@@ -97,9 +98,6 @@ EXTERN void rotate_x(float theta);
 EXTERN void rotate_y(float theta);
 EXTERN void rotate_z(float theta);
 EXTERN void rotate(float x, float y, float z, float theta);
-
-
-
 
 EXTERN void matprint(const mat22d& pa);
 EXTERN void matprint(const mat33d& pa);

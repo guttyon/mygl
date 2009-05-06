@@ -164,6 +164,13 @@ void getmat(mat44d* mat)
   }
 }
 
+void getmodel2perspective(mat44d* m)
+{
+  mat44d tmp;
+  mmul(&tmp, &stack_view[cur_view], &stack_world[cur_world]);
+  mmul(m, &stack_proj[cur_proj], &tmp);
+}
+
 void add_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
 {
   double* dst = (double*)pdst;
@@ -211,6 +218,7 @@ void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb)
 
 void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb)
 {
+  assert(pdst != pa && pdst != pb);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   const double* b = (double*)pb;
@@ -224,6 +232,7 @@ void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb)
 }
 void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
 {
+  assert(pdst != pa && pdst != pb);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   const double* b = (double*)pb;
@@ -265,6 +274,7 @@ void mulmat(const mat44d* m)
 // 転置
 void transpose(mat22d* pdst, const mat22d* pa)
 {
+  assert(pdst != pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   dst[0] = a[0];
@@ -274,6 +284,7 @@ void transpose(mat22d* pdst, const mat22d* pa)
 }
 void transpose(mat33d* pdst, const mat33d* pa)
 {
+  assert(pdst != pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   for(int i = 0; i < 3; ++i)
@@ -286,6 +297,7 @@ void transpose(mat33d* pdst, const mat33d* pa)
 }
 void transpose(mat44d* pdst, const mat44d* pa)
 {
+  assert(pdst != pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
   for(int i = 0; i < 4; ++i)
@@ -364,6 +376,7 @@ double determinant(const mat44d* pa)
 // p50
 void inverse(mat22d* pdst, const mat22d* pa)
 {
+  assert(pdst != pa);
   double det = determinant(pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
@@ -374,6 +387,7 @@ void inverse(mat22d* pdst, const mat22d* pa)
 }
 void inverse(mat33d* pdst, const mat33d* pa)
 {
+  assert(pdst != pa);
   double det = determinant(pa);
   double* dst = (double*)pdst;
   const double* a = (double*)pa;
@@ -391,6 +405,7 @@ void inverse(mat33d* pdst, const mat33d* pa)
 }
 void inverse(mat44d* pdst, const mat44d* pa)
 {
+  assert(pdst != pa);
   double* dst = (double*)pdst;
   mat33d tmp33;
   double det0 = determinant(pa);
@@ -707,6 +722,7 @@ void perspective(mat44d* pdst, double fovy, double aspect, double near, double f
 }
 
 // world2viewとして使う。
+// OpenGLの神髄, p85
 void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ)
 {
   double* dst = (double*)pdst;
@@ -738,6 +754,16 @@ void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,
   dst[13] = 0.;
   dst[14] = 0.;
   dst[15] = 1.;
+}
+
+// TODO:
+// 出力画面の位置を設定する。
+// 正規化され、x, y[-1.0 .. -1.0], z [0.0 .. 1.0]にあるが、これを画面座標に変換する。
+// wとhの比をperspectiveの比にあわせないと、画面が歪むことに注意。
+void viewport(int x, int y, int w, int h)
+{
+
+
 }
 
 

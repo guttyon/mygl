@@ -328,6 +328,7 @@ void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
 // 処理順序は、以下を参照
 // Jim Blinn's Corner A Trip Down the Graphics Pipeline, p176
 // コンピュータグラフィックス 理論と実践, p880
+// OpenGLの神髄, p76 .. p81
 // 頂点の項目は、位置、法線、頂点カラー、テクスチャ座標
 void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* texcood, int vnum)
 {
