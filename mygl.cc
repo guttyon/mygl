@@ -358,6 +358,25 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
     }
   }
 
+  // OpenGLプログラミングガイド, p639
+  // texcood自動生成モードが有効なら、
+  // texcood座標変換の前に、texcoodを自動生成しないといけない。
+  // その後、さらにtexcood座標変換が行われる。
+  // 
+  // OpenGLプログラミングガイド, p411, 415
+  // 自動生成モードは、３種類。OBJ_PLANE, EYE_PLANE, SPHERE_MAP
+  // OBJ_PLANE: オブジェクト座標を(x,y,z,w)とし、生成パラメータを(a,b,c,d)とする。
+  // 生成される座標 = a * x + b * y + c * z + d * w
+  // つまり、w = 1とし、(a, b, c, d)を平面のパラメータと考えると、
+  // 平面からの距離をテクスチャ座標に生成できる。（ターゲットはs,t,r,qの選択されたもの）
+  // EYE_PLANE: 視点座標を(x,y,z,w)とし、生成パラメータを(a,b,c,d)とする。
+  // 生成される座標 = a' * x + b' * y + c' * z + d' * w
+  // ここで、(a', b', c', d') = (a, b, c, d)M^-1
+  // Mはモデルビュー行列である。
+  // EYE_PLANEの例は、OpenGLの神髄のシャドウマップ例を参照。
+  
+
+  
   // 法線座標変換(位置座標変換の逆転置行列で)
   // texcood座標変換(テクスチャ行列で)
 
