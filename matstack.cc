@@ -839,6 +839,56 @@ void viewport(int x, int y, int w, int h)
 
 }
 
+// OpenGL プログラミングガイド5版,p727
+void inv_frustum(mat44d* pdst, double left, double right, double bottom, double top, double near, double far)
+{
+  double* dst = (double*)pdst;
+
+  dst[ 0] = (right - left) / (2. * near);
+  dst[ 1] = 0.;
+  dst[ 2] = 0.;
+  dst[ 3] = (right + left) / (2. * near);
+
+  dst[ 4] = 0.;
+  dst[ 5] = (top - bottom) / (2. * near);
+  dst[ 6] = 0.;
+  dst[ 7] = (top + bottom) / (2. * near);
+
+  dst[ 8] = 0.;
+  dst[ 9] = 0.;
+  dst[10] = 0.;
+  dst[11] = -1.;
+
+  dst[12] = 0.;
+  dst[13] = 0.;
+  dst[14] = -(far - near) / (2. * far * near);
+  dst[15] = (far + near) / (2. * far * near);
+}
+
+// OpenGL プログラミングガイド5版,p727
+void inv_ortho(mat44d* pdst, double left, double right, double bottom, double top, double near, double far)
+{
+  double* dst = (double*)pdst;
+  dst[ 0] = (right - left) / 2.;
+  dst[ 1] = 0.;
+  dst[ 2] = 0.;
+  dst[ 3] = (right + left) / 2.;
+
+  dst[ 4] = 0.;
+  dst[ 5] = (top - bottom) / 2.;
+  dst[ 6] = 0.;
+  dst[ 7] = (top + bottom) / 2.;
+
+  dst[ 8] = 0.;
+  dst[ 9] = 0.;
+  dst[10] = (far - near) / (-2.);
+  dst[11] = (far + near) / 2.;
+
+  dst[12] = 0.;
+  dst[13] = 0.;
+  dst[14] = 0.;
+  dst[15] = 1.;
+}
 
 double abs(const v3d* pv)
 {
