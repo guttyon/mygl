@@ -245,6 +245,29 @@ void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb)
   }
   return;
 }
+void mvmul(v3d* pdst, const mat33d* pa, const v3d* pb)
+{
+  assert(pdst != pb);
+  double* dst = (double*)pdst;
+  const double* a = (double*)pa;
+  const double* b = (double*)pb;
+  dst[0] = a[ 0] * b[0] + a[ 1] * b[1] + a[ 2] * b[2];
+  dst[1] = a[ 3] * b[0] + a[ 4] * b[1] + a[ 5] * b[2];
+  dst[2] = a[ 6] * b[0] + a[ 7] * b[1] + a[ 8] * b[2];
+  return;
+}
+void mvmul(v4d* pdst, const mat44d* pa, const v4d* pb)
+{
+  assert(pdst != pb);
+  double* dst = (double*)pdst;
+  const double* a = (double*)pa;
+  const double* b = (double*)pb;
+  dst[0] = a[ 0] * b[0] + a[ 1] * b[1] + a[ 2] * b[2] + a[ 3] * b[3];
+  dst[1] = a[ 4] * b[0] + a[ 5] * b[1] + a[ 6] * b[2] + a[ 7] * b[3];
+  dst[2] = a[ 8] * b[0] + a[ 9] * b[1] + a[10] * b[2] + a[11] * b[3];
+  dst[3] = a[12] * b[0] + a[13] * b[1] + a[14] * b[2] + a[15] * b[3];
+  return;
+}
 
 // 右にかけていく。
 void mulmat(const mat44d* m)
@@ -623,6 +646,7 @@ void randmat(mat44d* pa)
 // p104
 // (left, bottom, -near):ニアクリップの左下
 // (right, top, -near):ニアクリップの右上の座標を示す
+// カメラは-Zの方へ向いていることに注意。
 void frustum(mat44d* pdst, double left, double right, double bottom, double top, double near, double far)
 {
   double* dst = (double*)pdst;
@@ -712,13 +736,32 @@ void ortho(double left, double right, double bottom, double top, double near, do
   }
 }
 
-// TODO:
 // fovy [0.0 .. 180.0], aspect:w/h
 // near, far: 視点からの距離
 void perspective(mat44d* pdst, double fovy, double aspect, double near, double far)
 {
-  //  double* dst = (double*)pdst;
+  const double halfH = near * tan(fovy * 0.5);
+  const double halfW = halfH * aspect; // aspect:w/h
+  frustum(pdst, -halfW, halfW, -halfH, halfH, near, far);
+}
 
+void perspective(double fovy, double aspect, double near, double far)
+{
+  switch(cur_matmode)
+  {
+  case MATMODE_WORLD:
+    perspective(&stack_world[cur_world], fovy, aspect, near, far);
+    break;
+  case MATMODE_VIEW:
+    perspective(&stack_view[cur_view], fovy, aspect, near, far);
+    break;
+  case MATMODE_PROJ:
+    perspective(&stack_proj[cur_proj], fovy, aspect, near, far);
+    break;
+  case MATMODE_TEXTURE:
+    perspective(&stack_texsture[cur_texsture], fovy, aspect, near, far);
+    break;
+  }
 }
 
 // world2viewとして使う。

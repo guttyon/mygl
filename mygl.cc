@@ -28,8 +28,8 @@ struct TriEdgePair
 };
 
 
-// input: vertex, 
-// output: 
+// input: vertex,
+// output:
 // egde_pair(left_egde(x, dx), right_egde(x, dx))
 // and y0, y1.
 // return TriEdgePair num
@@ -324,6 +324,13 @@ void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
 }
 
 
+//           |Y
+//           |
+//           |
+//           |
+//           /--------X
+//          /
+//         /Z
 // TODO:
 // 処理順序は、以下を参照
 // Jim Blinn's Corner A Trip Down the Graphics Pipeline, p176
@@ -334,7 +341,13 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
 {
   assert(vnum < 50);
   v4f pos0[50];
-  // 座標変換
+  // 位置座標変換
+  // 変換後の同次座標表現(x,y,z,w)の値の範囲は、
+  // wは[0 .. 1]になる。
+  // x,y,zは、[-w .. w]の範囲になるので、結局[-1 .. 1]の範囲になる。
+  // OpenGLプログラミングガイド, p724
+  // （または、そうなるように透視変換行列がスケールされているようにも見える。
+  // 同次座標でスケールさせても空間位置は変わらないので）
   {
     mat44d m;
     getmodel2perspective(&m);
@@ -344,15 +357,23 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
     }
   }
 
-  // 法線座標変換、texcood座標変換
-  // 裏面カリングの後に座標変換したほうが効率的。ただし、クリップ前には終えないとダメ。
+  // 法線座標変換(位置座標変換の逆転置行列で)
+  // texcood座標変換(テクスチャ行列で)
 
 
-  // clip（hodge処理）
+  // 早めに裏面カリングの後に座標変換したほうが効率的そうだが、
+  // 法線を求めるための外積計算と視線ベクトルとの内積計算が重そう。
+
+
+  // clip（hodge処理）, jim本の高速クリップの章と、 16章参照。
+  // 全ての要素を補間する。
+
+  // 頂点に新たな要素として、１を追加。
 
   // w除算
 
   // 裏面カリング、w除算後じゃないとダメな気がする。
+  // 2次元座標系で法線計算できるので、3次元で計算するより楽そう。
 
   // トライアングルセットアップ（エッジ出力）
 

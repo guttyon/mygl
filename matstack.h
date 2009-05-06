@@ -24,6 +24,10 @@ typedef double mat22d[ 4];
 typedef double mat33d[ 9];
 typedef double mat44d[16];
 #endif // 0
+typedef double v3d[3];
+typedef double v4f[4];
+typedef double v4d[4];
+
 enum E_MATMODE
   {
     MATMODE_WORLD,
@@ -54,6 +58,8 @@ EXTERN void sub_m44_m44(mat44d* pdst, const mat44d* pa, const mat44d* pb);
 
 EXTERN void mmul(mat33d* pdst, const mat33d* pa, const mat33d* pb);
 EXTERN void mmul(mat44d* pdst, const mat44d* pa, const mat44d* pb);
+EXTERN void mvmul(v3d* pdst, const mat33d* pa, const v3d* pb);
+EXTERN void mvmul(v4d* pdst, const mat44d* pa, const v4d* pb);
 
 // 右にかけていく。
 EXTERN void mulmat(const mat44d* m);
@@ -127,7 +133,6 @@ EXTERN void ortho(double left, double right, double bottom, double top, double n
 // world2viewとして使う。
 EXTERN void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);
 
-typedef double v3d[3];
 EXTERN double abs(const v3d* pv);
 EXTERN double abs2(const v3d* pv);
 EXTERN void normalize(v3d* pdst, const v3d* pv);
