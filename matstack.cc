@@ -634,7 +634,7 @@ void vecprint(const v3d& pa)
 void vecprint(const v4d& pa)
 {
   const double* a = (double*)&pa;
-  printf("v3d: {%f, %f, %f, %f}\n", a[0], a[1], a[2], a[3]);
+  printf("v4d: {%f, %f, %f, %f} euclid=(%f, %f, %f)\n", a[0], a[1], a[2], a[3], a[0] / a[3], a[1] / a[3], a[2] / a[3]);
 }
 
 
@@ -751,10 +751,39 @@ void ortho(double left, double right, double bottom, double top, double near, do
 // near, far: 視点からの距離
 void perspective(mat44d* pdst, double fovy, double aspect, double near, double far)
 {
-  const double theta = M_PI * fovy / 180.0;
-  const double halfH = near * tan(theta * 0.5);
+#if 1
+  const double theta = (fovy * 0.5) * M_PI / 180.0;
+  const double halfH = near * tan(theta);
   const double halfW = halfH * aspect; // aspect:w/h
   frustum(pdst, -halfW, halfW, -halfH, halfH, near, far);
+#else
+  // Jim Blinn's Corner A Trip Down the Graphics Pipeline, p188, 24
+  double* dst = (double*)pdst;
+  const double theta = (fovy * 0.5) * M_PI / 180.0;
+  const double c = cos(theta);
+  const double s = sin(theta);
+  const double q = s / (1. - near / far);
+  dst[ 0] = c;
+  dst[ 1] = 0.;
+  dst[ 2] = 0.;
+  dst[ 3] = 0.;
+
+  dst[ 4] = 0.;
+  dst[ 5] = c;
+  dst[ 6] = 0.;
+  dst[ 7] = 0.;
+
+  dst[ 8] = 0.;
+  dst[ 9] = 0.;
+  dst[10] = -q;                 // 視線方向が、-Zなので、zにかかる係数を反転
+  dst[11] = -q * near;
+
+  dst[12] = 0.;
+  dst[13] = 0.;
+  dst[14] = -s;                 // 視線方向が、-Zなので、zにかかる係数を反転
+  dst[15] = 0.;
+  //for(int i = 0; i < 16; ++i)dst[i] /= s;
+#endif // 0
 }
 
 void perspective(double fovy, double aspect, double near, double far)
