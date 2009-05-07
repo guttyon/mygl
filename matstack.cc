@@ -757,6 +757,7 @@ void perspective(mat44d* pdst, double fovy, double aspect, double near, double f
   const double halfW = halfH * aspect; // aspect:w/h
   frustum(pdst, -halfW, halfW, -halfH, halfH, near, far);
 #else
+  // こっちは、OpenGLと微妙に値が違うし、aspect=1固定なので使わない
   // Jim Blinn's Corner A Trip Down the Graphics Pipeline, p188, 24
   double* dst = (double*)pdst;
   const double theta = (fovy * 0.5) * M_PI / 180.0;

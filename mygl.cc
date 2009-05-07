@@ -344,7 +344,7 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
   // 位置座標変換
   // 変換後の同次座標表現(x,y,z,w)の値の範囲は、
   // x,y,zは、[-w .. w]の範囲になるので、
-  // w除算後のゆーくりっど座標ではx,y,zは、[-1 .. 1]の範囲になる。
+  // w除算後のユークリッド座標ではx,y,zは、[-1 .. 1]の範囲になる。
   // OpenGLプログラミングガイド, p724
   // （または、そうなるように透視変換行列がスケールされているようにも見える。
   // 同次座標でスケールさせても空間位置は変わらないので）
@@ -396,8 +396,14 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
 
   // 頂点に新たな要素として、１を追加。
 
-  // w除算
+  
+  // w除算（全ての要素をw除算）
+  // クリップで行うw除算は、位置要素のみ除算した。
+  // ここでは全ての要素を除算する点でクリップ時のw除算とは異なる。
+  // 位置については2重で除算しちゃダメなことに注意
 
+
+  
   // 裏面カリング、w除算後じゃないとダメな気がする。
   // 2次元座標系で法線計算できるので、3次元で計算するより楽そう。
 
@@ -468,8 +474,8 @@ void render()
            0., 1., 0.);         // up
     matmode(MATMODE_PROJ);
     loadidentity();
-    perspective(100., 1., 1., 3.); // fovy, aspect, near, far
-    //    matprint(MATMODE_PROJ);exit(-1);
+    perspective(60., 640. / 480., 1., 1024.); // fovy, aspect, near, far
+    // matprint(MATMODE_PROJ);exit(-1);
 
     // pespectiveにあわせたzにする。
     v4d pos[] = {

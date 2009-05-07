@@ -49,6 +49,10 @@ prof: clean mygl
 	./mygl
 	gprof mygl
 
+gl: force
+	@make --no-print-directory -f Makefile.gl.mk test
+
+
 gitpush:
 	@# ファイルはBOMの無い、UTF-8Nで保存すること。
 	@# git remote add assembla git@git.assembla.com:mygl.git 
