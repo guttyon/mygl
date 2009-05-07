@@ -8,3 +8,5 @@ GSYMS
 GTAGS
 .*.d
 gmon.out
+ogltest
+ogltest.cc
