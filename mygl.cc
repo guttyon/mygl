@@ -5,6 +5,7 @@
 #include <SDL/SDL.h>
 
 #include "basetype.h"
+#include "basefunc.h"
 #include "setting.h"
 #include "vec.h"
 #include "sdluser.h"
@@ -324,6 +325,13 @@ void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
 }
 
 
+typedef double Bc[6];
+// クリップの必要があるか？の検査には位置情報だけでよい。
+bool need_clip(v4d* pos)
+{
+  return true;
+}
+
 //           |Y
 //           |
 //           |
@@ -419,7 +427,37 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
   // 変換処理が必要なので、負荷が増えているようだが、
   // この変換は透視変換等の変換に混ぜておけばよく、
   // 逆変換についても、ピクセル座標への変換と組み合わせれば、負荷は増えない。
+  {
+    Bc bc[50];
+    u8 kode[50];
+    for(int i = 0; i < vnum; ++i)
+    {
+      double x = pos0[i][0];
+      double y = pos0[i][1];
+      double z = pos0[i][2];
+      double w = pos0[i][3];
+      u8 tmp;
+      bc[i][0] = x;
+      if(x)tmp = 1<<0;
+      
+      bc[i][1] = w - x;
+      if(w - x)tmp |= 1<<1;
+      
+      bc[i][2] = y;
+      if(y)tmp |= 1<<2;
+      
+      bc[i][3] = w - y;
+      if(w - y)tmp |= 1<<3;
+      
+      bc[i][4] = z;
+      if(z)tmp |= 1<<4;
+      
+      bc[i][5] = w - z;
+      if(w - z)tmp |= 1<<5;
 
+      kode[i] = tmp;
+    }
+  }
 
   // 頂点に新たな要素として、１を追加。
   double pcorrect_factors[50]; // = {1.}; // w除算時に1.0初期化も行う。
@@ -540,13 +578,13 @@ void render()
       {0.0,   0.0, -2.0, 1.0},
       {-0.2, -0.2, -2.0, 1.0},
       {0.2,  -0.2, -2.0, 1.0},
+      // {-0.2,  -0.4, -2.0, 1.0},
     };
-    draw_primitive(PRIMITIVE_TRIANGLE_STRIP, pos, pos, pos, pos, 3);
+    draw_primitive(PRIMITIVE_TRIANGLE_STRIP, pos, pos, pos, pos, lengthof(pos));
   }
 
   sdlerror();
   SDL_UnlockSurface( gScreenSurface );// ロックを解除
-
 
   {
     loadidentity();
