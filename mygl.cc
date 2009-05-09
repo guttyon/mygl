@@ -350,7 +350,8 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
   // 同次座標でスケールさせても空間位置は変わらないので）
   {
     mat44d m;
-    getmodel2perspective(&m);
+    // getmodel2perspective(&m);
+    getmodel2clip(&m);
     for(int i = 0; i < vnum; ++i)
     {
       mvmul(pos0 + i, &m, pos + i);
@@ -421,20 +422,48 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
 
 
   // 頂点に新たな要素として、１を追加。
-
+  double pcorrect_factors[50]; // = {1.}; // w除算時に1.0初期化も行う。
+  
   
   // w除算（全ての要素をw除算）
-  // クリップで行うw除算は、位置要素のみ除算した。
-  // ここでは全ての要素を除算する点でクリップ時のw除算とは異なる。
-  // 位置については2重で除算しちゃダメなことに注意
+  for(int i = 0; i < vnum; ++i)
+  {
+    double w = pos0[i][3];
+    pos0[i][0] /= w;
+    pos0[i][1] /= w;
+    pos0[i][2] /= w;
+    pos0[i][3] = 1.0; // w要素
+    pcorrect_factors[i] = 1. / w;
+  }
 
-
+  // x,yをpixel座標へ変換
+  {
+    float sx, dx;
+    float sy, dy;
+    clip2pixel(&sx, &dx, &sy, &dy);
+    for(int i = 0; i < vnum; ++i)
+    {
+      pos0[i][0] = sx * pos0[i][0] + dx;
+      pos0[i][1] = sy * pos0[i][1] + dy;
+    }
+  }
   
   // 裏面カリング、w除算後じゃないとダメな気がする。
   // 2次元座標系で法線計算できるので、3次元で計算するより楽そう。
 
   // トライアングルセットアップ（エッジ出力）
-
+  {
+    Vec2f v[50];
+    for(int i = 0; i < vnum; ++i)
+    {
+      v[i].x = pos0[i][0];
+      v[i].y = pos0[i][1];
+      printf("hello.");
+      vecprint(pos0[i]);
+    }
+    draw_triangle_strip(v, vnum);
+  }
+  
   // スキャンライン（補間 -> w除算 -> シェーディング）
 }
 // TODO:
@@ -474,23 +503,26 @@ void render()
   lineto(&blue, B_LEFT, B_BOTTOM);
   lineto(&blue, B_RIGHT, B_BOTTOM);
 
-  // input Vec2f * 3, clips(left, right, top, bottom)
-  // output return dst_n, Vec2f * dst_n
-  //int hodge(Vec2f* v, float* clips, Vec2f* dst)
-  Vec2f result[30];
-  Vec2f input[] = {
-    Vec2f(200.f, 200.f),  Vec2f(200.f, 400.f), Vec2f(300.f, 340.f),
-    Vec2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
-    Vec2f(0.f, 0.f),  Vec2f(200.f, 200.f), Vec2f(30.f, 60.f),
-  };
-  draw_poly_raw(blue, input + 3, 3);
-  float xxxx;
-  int num = hodge(input + 3, &xxxx, result);
-  draw_poly_raw(red, result, num);
-
-  draw_triangle(input + 3);
+  if(0)
+  {
+    // input Vec2f * 3, clips(left, right, top, bottom)
+    // output return dst_n, Vec2f * dst_n
+    //int hodge(Vec2f* v, float* clips, Vec2f* dst)
+    Vec2f result[30];
+    Vec2f input[] = {
+      Vec2f(200.f, 200.f),  Vec2f(200.f, 400.f), Vec2f(300.f, 340.f),
+      Vec2f(200.f, 0.f),  Vec2f(0.f, 400.f), Vec2f(500.f, 440.f),
+      Vec2f(0.f, 0.f),  Vec2f(200.f, 200.f), Vec2f(30.f, 60.f),
+    };
+    draw_poly_raw(blue, input + 3, 3);
+    float xxxx;
+    int num = hodge(input + 3, &xxxx, result);
+    draw_poly_raw(red, result, num);
+    draw_triangle(input + 3);
+  }
 
   {
+    viewport(100, 100, 400, 400);
     matmode(MATMODE_WORLD);
     loadidentity();
     matmode(MATMODE_VIEW);

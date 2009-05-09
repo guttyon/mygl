@@ -42,7 +42,6 @@ EXTERN void pushmat();
 EXTERN void popmat();
 EXTERN void setmat(const mat44d* mat);
 EXTERN void getmat(mat44d* mat);
-EXTERN void getmodel2perspective(mat44d* m);
 
 
 EXTERN void loadidentity(mat22d* m);
@@ -138,6 +137,21 @@ EXTERN void perspective(double fovy, double aspect, double near, double far);
 // world2viewとして使う。
 EXTERN void lookat(mat44d* pdst, double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);
 EXTERN void lookat(double eyeX, double eyeY, double eyeZ, double centerX,double centerY,double centerZ, double upX, double upY, double upZ);
+
+
+EXTERN void getmodel2perspective(mat44d* m);
+EXTERN void getmodel2clip(mat44d* m);
+// 最後の変換で、出力先がintのpixel座標なので精度はゆるくてよく、float使用
+EXTERN void ndc2pixel(float* sx, float* dx, float* sy, float* dy);
+// 最後の変換で、出力先がintのpixel座標なので精度はゆるくてよく、float使用
+EXTERN void clip2pixel(float* sx, float* dx, float* sy, float* dy);
+// 出力画面の位置を設定する。
+// 正規化され、x, y[-1.0 .. -1.0], z [0.0 .. 1.0]にあるが、これを画面座標に変換する。
+// wとhの比をperspectiveの比にあわせないと、画面が歪むことに注意。
+// OpenGLプログラミングガイド, p135
+EXTERN void viewport(int x, int y, int w, int h);
+
+
 
 EXTERN double abs(const v3d* pv);
 EXTERN double abs2(const v3d* pv);

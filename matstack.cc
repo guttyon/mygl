@@ -164,12 +164,6 @@ void getmat(mat44d* mat)
   }
 }
 
-void getmodel2perspective(mat44d* m)
-{
-  mat44d tmp;
-  mmul(&tmp, &stack_view[cur_view], &stack_world[cur_world]);
-  mmul(m, &stack_proj[cur_proj], &tmp);
-}
 
 void add_m33_m33(mat33d* pdst, const mat33d* pa, const mat33d* pb)
 {
@@ -859,14 +853,114 @@ void lookat(double eyeX, double eyeY, double eyeZ, double centerX, double center
   }
 }
 
-// TODO:
+
+// ViewPort関連の行列
+// mat33dでもよいはず
+static mat44d mat_clip;
+static mat44d mat_invclip;
+static mat44d mat_pixel;
+
+void getmodel2perspective(mat44d* m)
+{
+  mat44d tmp;
+  // proj * view * world
+  mmul(&tmp, &stack_view[cur_view], &stack_world[cur_world]);
+  mmul(m, &stack_proj[cur_proj], &tmp);
+}
+void getmodel2clip(mat44d* m)
+{
+  mat44d tmp;
+  // clip * proj * view * world
+  getmodel2perspective(&tmp);
+  mmul(m, &mat_clip, &tmp);
+}
+
+// 最後の変換で、出力先がintのpixel座標なので精度はゆるくてよく、float使用
+void ndc2pixel(float* sx, float* dx, float* sy, float* dy)
+{
+  // NDCからpixelへの変換行列
+  *sx = mat_pixel[0];
+  *sy = mat_pixel[5];
+  *dx = mat_pixel[3];
+  *dy = mat_pixel[7];
+}
+// 最後の変換で、出力先がintのpixel座標なので精度はゆるくてよく、float使用
+void clip2pixel(float* sx, float* dx, float* sy, float* dy)
+{
+  mat44d tmp;
+  //  clipからpixelへの変換行列
+  // (NDC -> pixel) * (clip -> NDC)
+  mmul(&tmp, &mat_pixel, &mat_invclip);
+  *sx = tmp[0];
+  *sy = tmp[5];
+  *dx = tmp[3];
+  *dy = tmp[7];  
+}
+
 // 出力画面の位置を設定する。
 // 正規化され、x, y[-1.0 .. -1.0], z [0.0 .. 1.0]にあるが、これを画面座標に変換する。
 // wとhの比をperspectiveの比にあわせないと、画面が歪むことに注意。
+// OpenGLプログラミングガイド, p135
 void viewport(int x, int y, int w, int h)
 {
+  // NDC -> pixel
+  // Jim Blinn's Corner A Trip Down the Graphics Pipeline, p140
+  // [0 .. Nx - 1]への変換ではなく、[x .. x+w]への変換とする。
+  float a = 1.0; // ピクセルのaspect比
 
+  // -1 |-> x, 1 |-> x + w - 1
+  // -a |-> y + h - 1, a |-> y
+  // 以上を、p137式に適用すると、
+  float sx_np = (w - 1) * 0.5f;
+  float dx_np = x * 1.f + sx_np;
+  float sy_np = -(h - 1) / (2 * a);
+  float dy_np = (y + h - 1) * 1.f - (h - 1) * 0.5f; // = y + h - 1 + a * sy_np;
 
+  // w = 1 を仮定しないと、以下はなりたたない。
+  loadidentity(&mat_pixel);
+  mat_pixel[0] = sx_np;
+  mat_pixel[3] = dx_np;
+  mat_pixel[5] = sy_np;
+  mat_pixel[7] = dy_np;
+
+  // TODO: mat_clipとmat_invclipを作る
+  // 16章によると、まず、Vを求める必要がある。
+  // Vは、x,y,w,hをもとに、pixel -> NDC への逆変換を考えればよさそう。
+  // 以上を、p137式から、
+  float vl = (x * 1.f - dx_np) / sx_np;
+  float vr = ((x + w - 1) * 1.f - dx_np) / sx_np;
+  float vb = ((y + h - 1) * 1.f - dy_np) / sy_np;
+  float vt = (y * 1.f - dy_np) / sy_np;
+
+  // p163式より、Uを求める。
+  float ul = fmaxf(vl, -1);
+  float ur = fminf(vr, 1);
+  float ub = fmaxf(vb, -a);
+  float ut = fminf(vt, a);
+
+  // p164式より、得られたVをもとに、mat_clipとmat_invclipを作る。
+  // TODO:p165のul=ur時の特例に注意
+  float sx_wc = (vr - vl) / (2.f * (ur - ul));
+  float dx_wc = (-2.f * ul + vr + vl) / (2.f * (ur - ul));
+  float sy_wc = (vr - vl) / (2.f * (ut - ub));
+  float dy_wc = (-2.f * ub + vt + vb) / (2.f * (ut - ub));
+  loadidentity(&mat_clip);
+  mat_clip[0] = sx_wc;
+  mat_clip[3] = dx_wc;
+  mat_clip[5] = sy_wc;
+  mat_clip[7] = dy_wc;
+
+  // p165
+  float sx_cn = ur - ul;
+  float dx_cn = ul;
+  float sy_cn = ut - ub;
+  float dy_cn = ub;
+  loadidentity(&mat_invclip);
+  mat_invclip[0] = sx_cn;
+  mat_invclip[3] = dx_cn;
+  mat_invclip[5] = sy_cn;
+  mat_invclip[7] = dy_cn;
+  
 }
 
 // OpenGL プログラミングガイド5版,p727
