@@ -5,7 +5,7 @@ OBJS += sdluser.o
 OBJS += mygl.o
 OBJS += drawline.o
 OBJS += intersect.o
-OBJS += hodge.o
+OBJS += hodgman.o
 OBJS += mat.o
 OBJS += matstack.o
 

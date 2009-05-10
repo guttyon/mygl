@@ -12,7 +12,7 @@
 #include "util.h"
 #include "drawline.h"
 #include "intersect.h"
-#include "hodge.h"
+#include "hodgman.h"
 #include "matstack.h"
 
 
@@ -235,7 +235,7 @@ void draw_triangle(const Vec2f* v)
   {
     float xxxx;
     Vec2f result[3 + 6]; // clipする度に点が１つふえる。clip面は6つあるので、点が最大６増える。
-    int vnum = hodge(v, &xxxx, result);
+    int vnum = hodgman(v, &xxxx, result);
     int triangle_num = vnum - 2;
     // fan stripとして扱う。
     for(int j = 0; j < triangle_num; ++j)
@@ -327,10 +327,34 @@ void draw_poly_raw(const SDL_Color& c, Vec2f* v, int num)
 
 typedef double Bc[6];
 // クリップの必要があるか？の検査には位置情報だけでよい。
-bool need_clip(v4d* pos)
+bool need_clip(const Bc* bc, const u8* bcsign_bitarr)
 {
+  if(bcsign_bitarr[0] & bcsign_bitarr[1])
   return true;
 }
+
+// strip描画対応のために、face変数を追加
+void draw_triangle0(bool face)
+{
+
+}
+void draw_triangle(const Bc* bc, const u8* bcsign_bitarr, const v4f* pos, const v4f* normal, const v4f* col, const v4f* texcood)
+{
+  if(need_clip(bc, bcsign_bitarr))
+  {
+    //
+    int vnum;
+    for(int i = 0; i < vnum - 2; ++i)
+    {
+      //draw_triangle0();
+    }
+  }
+  else
+  {
+    //draw_triangle0();
+  }
+}
+
 
 //           |Y
 //           |
@@ -345,7 +369,7 @@ bool need_clip(v4d* pos)
 // コンピュータグラフィックス 理論と実践, p880
 // OpenGLの神髄, p76 .. p81
 // 頂点の項目は、位置、法線、頂点カラー、テクスチャ座標
-void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* texcood, int vnum)
+void draw_primitive(E_PRIMITIVE ptype, const v4f* pos, const v4f* normal, const v4f* col, const v4f* texcood, int vnum)
 {
   assert(vnum < 50);
   v4f pos0[50];
@@ -429,7 +453,7 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
   // 逆変換についても、ピクセル座標への変換と組み合わせれば、負荷は増えない。
   {
     Bc bc[50];
-    u8 kode[50];
+    u8 bcsign_bitarr[50];
     for(int i = 0; i < vnum; ++i)
     {
       double x = pos0[i][0];
@@ -455,7 +479,11 @@ void draw_primitive(E_PRIMITIVE ptype, v4f* pos, v4f* normal, v4f* col, v4f* tex
       bc[i][5] = w - z;
       if(w - z)tmp |= 1<<5;
 
-      kode[i] = tmp;
+      bcsign_bitarr[i] = tmp;
+    }
+    for(int i = 0; i < vnum - 2; ++i)
+    {
+      draw_triangle(bc + i, bcsign_bitarr + i, pos0 + i, normal + i, col + i, texcood + i);
     }
   }
 
@@ -554,7 +582,7 @@ void render()
     };
     draw_poly_raw(blue, input + 3, 3);
     float xxxx;
-    int num = hodge(input + 3, &xxxx, result);
+    int num = hodgman(input + 3, &xxxx, result);
     draw_poly_raw(red, result, num);
     draw_triangle(input + 3);
   }

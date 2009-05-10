@@ -2,7 +2,7 @@
 #include "basetype.h"
 #include "setting.h"
 #include "vec.h"
-#include "hodge.h"
+#include "hodgman.h"
 #include "intersect.h"
 
 bool inside(const Vec2f& v, const Edge2f& boundary)
@@ -13,8 +13,8 @@ bool inside(const Vec2f& v, const Edge2f& boundary)
 }
 
 
-
-int hodge0(const Vec2f* src, int vnum, const Edge2f& boundary, Vec2f* dst)
+// コンピュータグラフィックス　理論と実践, p130
+int hodgman0(const Vec2f* src, int vnum, const Edge2f& boundary, Vec2f* dst)
 {
   Vec2f s, p;
   s = src[vnum - 1];
@@ -48,7 +48,7 @@ int hodge0(const Vec2f* src, int vnum, const Edge2f& boundary, Vec2f* dst)
 
 // input Vec2f * 3, clips(left, right, top, bottom)
 // output return dst_n, Vec2f * dst_n
-int hodge(const Vec2f* v, float* clips, Vec2f* dst)
+int hodgman(const Vec2f* v, float* clips, Vec2f* dst)
 {
   int vnum = 3;
   Vec2f buf[2][30];
@@ -56,10 +56,10 @@ int hodge(const Vec2f* v, float* clips, Vec2f* dst)
   Edge2f left = {Vec2f(B_LEFT, B_TOP), Vec2f(B_LEFT, B_BOTTOM)};
   Edge2f bottom = {Vec2f(B_LEFT, B_BOTTOM), Vec2f(B_RIGHT, B_BOTTOM)};
   Edge2f right = {Vec2f(B_RIGHT, B_BOTTOM), Vec2f(B_RIGHT, B_TOP)};
-  vnum = hodge0(v, vnum, bottom, buf[0]);
-  vnum = hodge0(buf[0], vnum, right, buf[1]);
-  vnum = hodge0(buf[1], vnum, top, buf[0]);
-  vnum = hodge0(buf[0], vnum, left, dst);
+  vnum = hodgman0(v, vnum, bottom, buf[0]);
+  vnum = hodgman0(buf[0], vnum, right, buf[1]);
+  vnum = hodgman0(buf[1], vnum, top, buf[0]);
+  vnum = hodgman0(buf[0], vnum, left, dst);
   // TODO: near, far クリップも追加すること。
   return vnum;
 }
