@@ -1,3 +1,4 @@
+include rules.mak
 
 OBJS = util.o
 OBJS += main.o
@@ -24,17 +25,18 @@ DEPS = $(foreach O,$(OBJS),.$O.d)
 all: mygl
 
 mygl: $(OBJS)
-	g++ $(LDFLAGS) $(OBJS) -o $@
+#	g++ $(LDFLAGS) $(OBJS) -o $@
+	$(LINK)
 
 # 比較用
 mygl2: $(OBJS)
 	g++ $(LDFLAGS) $(OBJS) -o $@
 
-%.o: %.cc
-	@g++ -M $< > .$@.d
-	@echo "" >> .$@.d
-	@echo "cmd-$@ = g++ -c $(CXXFLAGS) $< -o $@" >> .$@.d
-	@make --no-print-directory -f Makefile.build $@
+# %.o: %.cc
+# 	@g++ -M $< > .$@.d
+# 	@echo "" >> .$@.d
+# 	@echo "cmd-$@ = g++ -c $(CXXFLAGS) $< -o $@" >> .$@.d
+# 	@make --no-print-directory -f Makefile.build $@
 #	内部では$(obj)で参照できる。
 #	ただし、そうすると、Makefile.buildの先頭でincludeし、.oをターゲットとしないといけなくなる。
 #	@make --no-print-directory -f Makefile.build obj=$@
@@ -63,4 +65,6 @@ force: ;
 
 .PHONY : clean force
 
-sinclude $(DEPS)
+#sinclude $(DEPS)
+# Include automatically generated dependency files
+-include $(wildcard *.d */*.d)

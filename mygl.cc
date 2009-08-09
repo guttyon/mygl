@@ -588,7 +588,7 @@ void render()
   }
 
   {
-    viewport(100, 100, 400, 400);
+    viewport(B_LEFT, B_TOP, B_RIGHT - B_LEFT, B_BOTTOM - B_TOP);
     matmode(MATMODE_WORLD);
     loadidentity();
     matmode(MATMODE_VIEW);
